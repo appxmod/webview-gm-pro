@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import at.pardus.android.webview.gm.store.CMN;
+import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
 import at.pardus.android.webview.gm.util.DownloadHelper;
 
 /**
@@ -70,7 +71,7 @@ public class Script extends ScriptMetadata {
 	 * @see <tt><a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a></tt>
 	 * @see <tt><a href="https://github.com/greasemonkey/greasemonkey/blob/master/modules/parseScript.js">parseScript.js</a></tt>
 	 */
-	public static Script parse(String scriptStr, String url) {
+	public static Script parse(String scriptStr, String url, ScriptStoreSQLite scriptStore) {
 		CMN.Log("fatal parsing::", url);
 		String name = null, namespace = null, description = null, downloadurl = null, updateurl = null, installurl = null, icon = null, runAt = null, version = null;
 		boolean unwrap = false;
@@ -140,34 +141,33 @@ public class Script extends ScriptMetadata {
 						}
 					} else if (propertyName.equals("version")) {
 						version = propertyValue;
-					} else if (propertyName.equals("require")) {
+					}
+					else if (propertyName.equals("require")) {
 						//if(true) continue;
-						ScriptRequire require = downloadRequire(
-							DownloadHelper.resolveURL(propertyValue, url)
-						);
-						if (require == null) {
-							CMN.Log("fatal parsing::", "require == null");
-							return null;
+						String required = DownloadHelper.resolveURL(propertyValue, url);
+						if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), required)) {
+							ScriptRequire require = downloadRequire(required);
+							if (require != null) {
+								requires.add(require);
+							}
 						}
-						requires.add(require);
-					} else if (propertyName.equals("resource")) {
+					}
+					else if (propertyName.equals("resource")) {
 						//if(true) continue;
-						Pattern resourcePattern = Pattern
-								.compile("(\\S+)\\s+(.*)");
-						Matcher resourceMatcher = resourcePattern
-								.matcher(propertyValue);
+						Pattern resourcePattern = Pattern.compile("(\\S+)\\s+(.*)");
+						Matcher resourceMatcher = resourcePattern.matcher(propertyValue);
 						if (!resourceMatcher.matches()) {
 							CMN.Log("fatal parsing::", "!resourceMatcher.matches()");
 							return null;
 						}
-						ScriptResource resource = downloadResource(
-							resourceMatcher.group(1),
-							DownloadHelper.resolveURL(resourceMatcher.group(2), url)
-						);
-						if (resource == null) {
-							return null;
+						String required = resourceMatcher.group(1);
+						if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), required)) {
+							ScriptResource resource = downloadResource(required
+									, DownloadHelper.resolveURL(resourceMatcher.group(2), url));
+							if (resource == null) {
+								resources.add(resource);
+							}
 						}
-						resources.add(resource);
 					} else if (propertyName.equals("exclude")) {
 						match.add("!");
 						match.add(propertyValue);
