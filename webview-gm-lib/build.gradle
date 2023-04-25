@@ -33,6 +33,11 @@ artifacts {
 
 
 dependencies {
+
+    compileOnly 'org.appxmod.metaline:Metaline:latest.release'
+    annotationProcessor 'org.appxmod.metaline:Metaline:latest.release'
+    testImplementation 'org.appxmod.metaline:Metaline:latest.release'
+    testAnnotationProcessor 'org.appxmod.metaline:Metaline:latest.release'
 }
 
 

@@ -22,6 +22,8 @@ import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.knziha.metaline.Metaline;
+
 import java.util.UUID;
 
 import at.pardus.android.webview.gm.model.Script;
@@ -36,20 +38,118 @@ public class WebViewClientGm extends WebViewClient {
 
 	private static final String TAG = WebViewClientGm.class.getName();
 
-	private static final String JSCONTAINERSTART = "(function() {\n";
+	private static final String JSCONTAINERSTART = "(function() {";
 
 	private static final String JSCONTAINEREND = "\n})()";
 
-	private static final String JSUNSAFEWINDOW = "unsafeWindow = (function() { var el = document.createElement('p'); el.setAttribute('onclick', 'return window;'); return el.onclick(); }()); window.wrappedJSObject = unsafeWindow;\n";
+   /**
+	unsafeWindow = (function() {
+		var el = document.createElement('p');
+		el.setAttribute('onclick', 'return window;');
+		return el.onclick();
+	}());
+	window.wrappedJSObject = unsafeWindow;
+	var GM_wv={};
+	function GM_listValues() {
+		return GM_wv.bg.listValues(GM_wv.n, GM_wv.ns, GM_wv.sec).split(",");
+	}
+	function GM_getValue(name, defaultValue) {
+		return GM_wv.bg.getValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, defaultValue);
+	}
+	function GM_setValue(name, value) {
+		GM_wv.bg.setValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, value);
+	}
+	function GM_deleteValue(name) {
+		GM_wv.bg.deleteValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name);
+	}
+	function GM_addStyle(css) {
+		var style = document.createElement("style");
+		style.type = "text/css";
+		style.innerHTML = css;
+		document.getElementsByTagName('head')[0].appendChild(style);
+	}
+	function GM_log(message) {
+		GM_wv.bg.log(GM_wv.n, GM_wv.ns, GM_wv.sec, message);
+	}
+	function GM_getResourceURL(resourceName) {
+		return GM_wv.bg.getResourceURL(GM_wv.n, GM_wv.ns, GM_wv.sec, resourceName);
+	}
+	function GM_getResourceText(resourceName) {
+		return GM_wv.bg.getResourceText(GM_wv.n, GM_wv.ns, GM_wv.sec, resourceName);
+	}
+	function GM_xmlhttpRequest(details) {
+		var sig = '_' + Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
+		var pfx = GM_wv.hash;
+		var key, he=details, his=[];
+		function hook(n, b) {
+			if(he[n]) {
+				key = sig + b + pfx;
+				unsafeWindow[key] = he[n];
+				he[n] = key;
+				his.push(key);
+			}
+		}
+		details.ondone = function() {
+			for(var i=0,he;he=his[i++];) {
+				delete unsafeWindow[he];
+			}
+		};
+		hook('ondone', 'GM_onDone');
+		hook('onabort', 'GM_onAbortCallback');
+		hook('onerror', 'GM_onErrorCallback');
+		hook('onload', 'GM_onLoadCallback');
+		hook('onprogress', 'GM_onProgressCallback');
+		hook('onreadystatechange', 'GM_onReadyStateChange');
+		hook('ontimeout', 'GM_onTimeoutCallback');
+		he=details.upload;
+		if (he) {
+			hook('onabort', 'GM_uploadOnAbortCallback');
+			hook('onerror', 'GM_uploadOnErrorCallback');
+			hook('onload', 'GM_uploadOnLoadCallback');
+			hook('onprogress', 'GM_uploadOnProgressCallback');
+		}
+		return JSON.parse(GM_wv.bg.xmlHttpRequest(GM_wv.n, GM_wv.ns, GM_wv.sec, JSON.stringify(details)));
+	}
+	function nonimpl(n) {
+		GM_log(n+" is not yet implemented");
+	}
+	function GM_openInTab() {
+		nonimpl('GM_openInTab');
+	}
+	function GM_registerMenuCommand() {
+		nonimpl('GM_registerMenuCommand');
+	}
+	function GM_notification() {
+		nonimpl('GM_notification');
+	}
+	function GM_unregisterMenuCommand() {
+		nonimpl('GM_unregisterMenuCommand');
+	}
+	function GM_setClipboard() {
+		nonimpl('GM_setClipboard');
+	}
+ */
+	@Metaline()
+	private static final String JSUNSAFEWINDOW = "https://wiki.greasespot.net/Greasemonkey_Manual:API";
 
-	private static final String JSMISSINGFUNCTION = "function() { GM_log(\"Called function not yet implemented\"); };\n";
+	/**var GM_info = {
+		script: {
+			name: GM_wv.n
+			, namespace: GM_wv.ns
+			, version: GM_wv.ver
+		}
+		, scriptMetaStr: GM_wv.meta
+		, scriptHandler: 'webview-gm'
+		, version: 'infinite'
+	};*/
+	@Metaline()
+	private static final String JSGMINFO = "https://wiki.greasespot.net/GM.info";
 
-	private static final String JSMISSINGFUNCTIONS = "var GM_info = "
-			+ JSMISSINGFUNCTION + "var GM_openInTab = " + JSMISSINGFUNCTION
-			+ "var GM_registerMenuCommand = " + JSMISSINGFUNCTION
-			+ "var GM_notification = " + JSMISSINGFUNCTION
-			+ "var GM_unregisterMenuCommand = " + JSMISSINGFUNCTION
-			+ "var GM_setClipboard = " + JSMISSINGFUNCTION;
+//	private static final String JSMISSINGFUNCTIONS = "var GM_openInTab = " + JSMISSINGFUNCTION
+//			+ "var GM_registerMenuCommand = " + JSMISSINGFUNCTION
+//			+ "var GM_notification = " + JSMISSINGFUNCTION
+//			+ "var GM_unregisterMenuCommand = " + JSMISSINGFUNCTION
+//			+ "var GM_setClipboard = " + JSMISSINGFUNCTION;
 
 	private ScriptStoreSQLite ScriptStoreSQLite;
 
@@ -59,7 +159,7 @@ public class WebViewClientGm extends WebViewClient {
 
 	/**
 	 * Constructs a new WebViewClientGm with a ScriptStoreSQLite.
-	 * 
+	 *
 	 * @param ScriptStoreSQLite
 	 *            the script database to query for scripts to run when a page
 	 *            starts/finishes loading
@@ -75,15 +175,17 @@ public class WebViewClientGm extends WebViewClient {
 		this.jsBridgeName = jsBridgeName;
 		this.secret = secret;
 	}
-
+	
+	StringBuilder buffer = new StringBuilder();
+	
 	/**
 	 * Runs user scripts enabled for a given URL.
-	 * 
+	 *
 	 * Unless a script specifies unwrap it is executed inside an anonymous
 	 * function to hide it from access from the loaded page. Calls to the global
 	 * JavaScript bridge methods require a secret that is set inside of each
 	 * user script's anonymous function.
-	 * 
+	 *
 	 * @param view
 	 *            the view to load scripts in
 	 * @param url
@@ -121,95 +223,57 @@ public class WebViewClientGm extends WebViewClient {
 					|| (pageFinished && (script.getRunAt() == null || Script.RUNATEND
 							.equals(script.getRunAt())))) {
 				Log.i(TAG, "Running script \"" + script + "\" on " + url);
-				String defaultSignature = "\""
-						+ script.getName().replace("\"", "\\\"") + "\", \""
-						+ script.getNamespace().replace("\"", "\\\"")
-						+ "\", \"" + secret + "\"";
-				String callbackPrefix = ("GM_"
+				
+				buffer.setLength(0);
+				buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
+				
+				boolean unwrap = script.isUnwrap();
+				boolean bigcake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+				if (!bigcake) {
+					buffer.append("javascript:\n");
+					unwrap = false;
+				}
+				if (!unwrap) {
+					buffer.append(JSCONTAINERSTART);
+				}
+				buffer.append(JSUNSAFEWINDOW);
+				buffer.append("GM_wv.n=\"").append(script.getName().replace("\"", "\\\"")).append("\"");
+				buffer.append(";GM_wv.ns=\"").append(script.getNamespace().replace("\"", "\\\"")).append("\"");
+				buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
+				buffer.append(";GM_wv.sec=\"").append(secret).append("\"");
+				buffer.append(";GM_wv.bg=").append(jsBridgeName);
+				buffer.append(";GM_wv.hash=\"").append(("GM_"
 						+ script.getName()
 						+ script.getNamespace()
 						+ UUID.randomUUID().toString())
-						.replaceAll("[^0-9a-zA-Z_]", "");
-				String jsApi = JSUNSAFEWINDOW;
-				jsApi += "var GM_listValues = function() { return "
-						+ jsBridgeName + ".listValues(" + defaultSignature
-						+ ").split(\",\"); };\n";
-				jsApi += "var GM_getValue = function(name, defaultValue) { return "
-						+ jsBridgeName
-						+ ".getValue("
-						+ defaultSignature
-						+ ", name, defaultValue); };\n";
-				jsApi += "var GM_setValue = function(name, value) { "
-						+ jsBridgeName + ".setValue(" + defaultSignature
-						+ ", name, value); };\n";
-				jsApi += "var GM_deleteValue = function(name) { "
-						+ jsBridgeName + ".deleteValue(" + defaultSignature
-						+ ", name); };\n";
-				jsApi += "var GM_addStyle = function(css) { "
-						+ "var style = document.createElement(\"style\"); "
-						+ "style.type = \"text/css\"; style.innerHTML = css; "
-						+ "document.getElementsByTagName('head')[0].appendChild(style); };\n";
-				jsApi += "var GM_log = function(message) { " + jsBridgeName
-						+ ".log(" + defaultSignature + ", message); };\n";
-				jsApi += "var GM_getResourceURL = function(resourceName) { return "
-						+ jsBridgeName
-						+ ".getResourceURL("
-						+ defaultSignature
-						+ ", resourceName); };\n";
-				jsApi += "var GM_getResourceText = function(resourceName) { return "
-						+ jsBridgeName
-						+ ".getResourceText("
-						+ defaultSignature
-						+ ", resourceName); };\n";
-				
-				jsApi += "var GM_xmlhttpRequest = function(details) { \n"
-						+ "var sig='_'+Math.ceil(Math.random()*10000)"
-							+ "+(''+Date.now()).slice(7)\n"
-						+ "var pfx = '"+callbackPrefix+"';\n"
-						+ "var key;\n"
-						+ "if (details.onabort) { key=sig+'GM_onAbortCallback'+pfx; unsafeWindow[key]=details.onabort; details.onabort=key; }\n"
-						+ "if (details.onerror) { key=sig+'GM_onErrorCallback'+pfx; unsafeWindow[key]=details.onerror; details.onerror=key; }\n"
-						+ "if (details.onload) { key=sig+'GM_onLoadCallback'+pfx; unsafeWindow[key]=details.onload; details.onload=key; }\n"
-						+ "if (details.onprogress) { key=sig+'GM_onProgressCallback'+pfx; unsafeWindow[key]=details.onprogress; details.onprogress=key; }\n"
-						+ "if (details.onreadystatechange) { key=sig+'GM_onReadyStateChange'+pfx; unsafeWindow[key]=details.onreadystatechange; details.onreadystatechange=key; }\n"
-						+ "if (details.ontimeout) { key=sig+'GM_onTimeoutCallback'+pfx; unsafeWindow[key]=details.ontimeout; details.ontimeout=key; }\n"
-						+ "if (details.upload) {\n"
-						+ "if (details.upload.onabort) { key=sig+'GM_uploadOnAbortCallback'+pfx; unsafeWindow[key]=details.upload.onabort; details.upload.onabort=key; }\n"
-						+ "if (details.upload.onerror) { key=sig+'GM_uploadOnErrorCallback'+pfx; unsafeWindow[key]=details.upload.onerror; details.upload.onerror=key; }\n"
-						+ "if (details.upload.onload) { key=sig+'GM_uploadOnLoadCallback'+pfx; unsafeWindow[key]=details.upload.onload; details.upload.onload=key; }\n"
-						+ "if (details.upload.onprogress) { key=sig+'GM_uploadOnProgressCallback'+pfx; unsafeWindow[key]=details.upload.onprogress; details.upload.onprogress=key; }\n"
-						+ "}\n"
-						+ "return JSON.parse("
-						+ jsBridgeName
-						+ ".xmlHttpRequest("
-						+ defaultSignature
-						+ ", JSON.stringify(details))); };\n";
-				// TODO implement missing functions
-				jsApi += JSMISSINGFUNCTIONS;
-				jsApi += "var GM_info = {";
-				jsApi += "script:{version:\""+script.getVersion().replace("\"", "\\\"")+"\"}";
-				jsApi += "};\n";
+						.replaceAll("[^0-9a-zA-Z_]", "")).append("\"");
+				buffer.append(";GM_wv.bg=").append(jsBridgeName)
+						.append(";").append(JSGMINFO).append("\n");
 
 				// Get @require'd scripts to inject for this script.
-				String jsAllRequires = "";
 				ScriptRequire[] requires = script.getRequires();
 				if (requires != null) {
 					for (ScriptRequire currentRequire : requires) {
-						CMN.debug("currentRequire::", currentRequire.getContent());
-						jsAllRequires += (currentRequire.getContent() + "\n");
+						//CMN.debug("currentRequire::", currentRequire.getContent());
+						buffer.append(currentRequire.getContent());
+						buffer.append("\n");
 					}
 				}
-
-                String jsCode = jsApi + jsAllRequires + jsBeforeScript + script
-                        .getContent() + jsAfterScript;
-                if (!script.isUnwrap()) {
-					// todo FIXME java.lang.OutOfMemoryError: Failed to allocate a 16 byte allocation with 1795200 free bytes and 1753KB until OOM
-                    jsCode = JSCONTAINERSTART + jsCode + JSCONTAINEREND;
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+				
+				buffer.append(jsBeforeScript)
+						.append(script.getContent())
+						.append(jsAfterScript);
+				if (!unwrap) {
+					buffer.append(JSCONTAINEREND);
+				}
+				
+				// todo FIXME java.lang.OutOfMemoryError: Failed to allocate a 16 byte allocation with 1795200 free bytes and 1753KB until OOM
+				String jsCode = buffer.toString();
+				
+                if (bigcake) {
                     view.evaluateJavascript(jsCode, null);
                 } else {
-                    view.loadUrl("javascript:\n" + jsCode);
+                    view.loadUrl(jsCode);
                 }
 			}
 		}
