@@ -320,6 +320,7 @@ public class WebViewXmlHttpRequest {
 
 			executeOnLoadCallback(response);
 		} catch (SocketTimeoutException e) {
+			CMN.debug(e);
 			Log.e(TAG, "Timeout issuing GM_xmlhttpRequest for: " + this.url
 					+ ": " + e.getMessage());
 			executeOnTimeoutCallback(response);
@@ -327,10 +328,10 @@ public class WebViewXmlHttpRequest {
 			Log.e(TAG,
 					"Unable to get UTF-8 bytes for HTTP Basic Auth username/password");
 			return null;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Log.e(TAG, "Exception issuing GM_xmlhttpRequest for: " + this.url
 					+ ": " + e.getMessage());
-
+			CMN.debug(e);
 			if (duringUpload) {
 				executeUploadOnErrorCallback(response);
 			} else {
@@ -342,12 +343,12 @@ public class WebViewXmlHttpRequest {
 	}
 
 	private void loadUrlOnUiThread(final String jsUrl) {
-		CMN.debug("loadUrlOnUiThread::evaluateJavascript::", jsUrl);
+//		CMN.debug("loadUrlOnUiThread::evaluateJavascript::", jsUrl);
 		view.post(new Runnable() {
 			public void run() {
-				//view.loadUrl(jsUrl);
-				CMN.debug("evaluateJavascript::", jsUrl.substring(11));
-				view.evaluateJavascript(jsUrl.substring(11), null);
+				view.loadUrl(jsUrl);
+//				CMN.debug("evaluateJavascript::", jsUrl.substring(11));
+//				view.evaluateJavascript(jsUrl.substring(11), null);
 			}
 		});
 	}

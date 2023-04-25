@@ -32,7 +32,7 @@ import java.net.URL;
  */
 public class DownloadHelper {
 
-	private static final String TAG = DownloadHelper.class.getName();
+	private static final String TAG = "fatal "+DownloadHelper.class.getName();
 
 	/**
 	 * Downloads and returns a file as String.

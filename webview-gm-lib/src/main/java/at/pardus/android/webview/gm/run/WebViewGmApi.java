@@ -20,6 +20,8 @@ import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import java.nio.charset.StandardCharsets;
+
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptResource;
@@ -32,7 +34,7 @@ import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
  */
 public class WebViewGmApi {
 
-	private static final String TAG = WebViewGmApi.class.getName();
+	private static final String TAG = "fatal "+WebViewGmApi.class.getName();
 
 	private WebView view;
 
@@ -105,15 +107,15 @@ public class WebViewGmApi {
 	 * @see <a href="http://wiki.greasespot.net/GM_getValue">GM_getValue</a>
 	 */
     @JavascriptInterface
-	public String getValue(String scriptName, String scriptNamespace,
-			String secret, String name, String defaultValue) {
+	public String getValue(String scriptName, String scriptNamespace, String secret, String name) {
 		if (!this.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"getValue\" did not supply correct secret");
 			return null;
 		}
 		String v = ScriptStoreSQLite.getValue(new ScriptId(scriptName,
 				scriptNamespace), name);
-		return (v != null) ? v : defaultValue;
+		//CMN.debug("getValue::", name, v);
+		return v;
 	}
 
 	/**
@@ -138,8 +140,8 @@ public class WebViewGmApi {
 			Log.e(TAG, "Call to \"setValue\" did not supply correct secret");
 			return;
 		}
-		ScriptStoreSQLite.setValue(new ScriptId(scriptName, scriptNamespace), name,
-				value);
+		//CMN.debug("setValue::", name, value==null?-1:value.length(), value);
+		ScriptStoreSQLite.setValue(new ScriptId(scriptName, scriptNamespace), name, value);
 	}
 
 	/**

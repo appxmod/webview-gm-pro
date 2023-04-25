@@ -53,11 +53,19 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_listValues() {
 		return GM_wv.bg.listValues(GM_wv.n, GM_wv.ns, GM_wv.sec).split(",");
 	}
-	function GM_getValue(name, defaultValue) {
-		return GM_wv.bg.getValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, defaultValue);
+	function GM_getValue(name, v) {
+		//console.log('GM_getValue', name, v);
+		var ret =  GM_wv.bg.getValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name);
+		if(ret==undefined) ret=v;
+		if(ret!=undefined && ret!=null) ret=JSON.parse(ret);
+		//console.log('get=', ret);
+		//console.log(new Error());
+		return ret;
 	}
 	function GM_setValue(name, value) {
-		GM_wv.bg.setValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, value);
+		//console.log('GM_setValue', name, value);
+		//console.log(new Error());
+		GM_wv.bg.setValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, JSON.stringify(value));
 	}
 	function GM_deleteValue(name) {
 		GM_wv.bg.deleteValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name);
@@ -233,6 +241,7 @@ public class WebViewClientGm extends WebViewClient {
 					buffer.append("javascript:\n");
 					unwrap = false;
 				}
+				unwrap = true;
 				if (!unwrap) {
 					buffer.append(JSCONTAINERSTART);
 				}

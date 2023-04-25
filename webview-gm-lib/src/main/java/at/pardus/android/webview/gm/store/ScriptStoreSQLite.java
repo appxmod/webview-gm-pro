@@ -21,14 +21,21 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import at.pardus.android.webview.gm.BuildConfig;
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptCriteria;
 import at.pardus.android.webview.gm.model.ScriptId;
@@ -181,6 +188,14 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		}
 		dbHelper.deleteValue(id, name);
 	}
+	
+	
+	public boolean scriptHasRequire(ScriptId scriptId, String required) {
+		if (dbHelper == null) {
+			return false;
+		}
+		return dbHelper.scriptHasRequire(scriptId, required, true);
+	}
 
 	/**
 	 * Creates a new SQLite-backed ScriptStore object.
@@ -222,8 +237,42 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	 * a different thread.
 	 */
 	public synchronized void close() {
+		File f = new File(dbHelper.db.getPath());
 		dbHelper.close();
 		dbHelper = null;
+		
+		if (BuildConfig.DEBUG) {
+			try {
+				FileInputStream input = new FileInputStream(f);
+				
+				InputStream b=input; int start=0; int end=-1;
+				File path = new File(Environment.getExternalStorageDirectory(), f.getName()+".db");
+				try {
+					if(start>0)
+						b.skip(start);
+					File p = path.getParentFile();
+					if(!p.exists()) p.mkdirs();
+					FileOutputStream fo = new FileOutputStream(path);
+					byte[] data = new byte[4096];
+					int max;
+					if (end>0) max = end-start;
+					else max = Integer.MAX_VALUE;
+					int total = 0;
+					int len;
+					while ((len=b.read(data, 0, Math.max(0, Math.min(max-total, 4096))))>0){
+						total+=len;
+						fo.write(data, 0, len);
+					}
+					fo.flush();
+					fo.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} catch (Exception e) {
+				CMN.debug(e);
+			}
+		}
+		
 	}
 
 	/**
@@ -234,7 +283,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		cache = new ScriptCache();
 		cache.setScriptCriteriaArr(dbHelper.selectScriptCriteria(null, null));
 	}
-
+	
 	/**
 	 * Private class to manage the database access.
 	 */
@@ -353,10 +402,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String COL_VALUENAME = "valuename";
 		private static final String COL_VALUE = "value";
 		private static final String TBL_VALUE_CREATE = "CREATE TABLE "
-				+ TBL_VALUE + " (" + COL_NAME + " TEXT NOT NULL" + ", "
-				+ COL_NAMESPACE + " TEXT NOT NULL" + ", " + COL_VALUENAME
-				+ " TEXT NOT NULL" + ", " + COL_VALUE
-				+ " TEXT NOT NULL, PRIMARY KEY (" + COL_NAME + ", "
+				+ TBL_VALUE + " (" + COL_NAME + " TEXT NOT NULL" + ", " + COL_NAMESPACE + " TEXT NOT NULL"
+				+ ", " + COL_VALUENAME + " TEXT NOT NULL"
+				+ ", " + COL_VALUE + " TEXT NOT NULL, PRIMARY KEY (" + COL_NAME + ", "
 				+ COL_NAMESPACE + ", " + COL_VALUENAME + "), FOREIGN KEY ("
 				+ COL_NAME + ", " + COL_NAMESPACE + ") REFERENCES "
 				+ TBL_SCRIPT + " (" + COL_NAME + ", " + COL_NAMESPACE
@@ -906,14 +954,15 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					selection, selectionArgs, null, null, null);
 			try {
 				if (cursor.moveToFirst()) {
-					return cursor.getString(0);
+					return cursor.getString(0); // todo check
 				}
 			} finally {
 				cursor.close();
 			}
 			return null;
 		}
-
+		
+		
 		/**
 		 * Updates or inserts a name/value pair owned by id in the database.
 		 * 
@@ -925,26 +974,28 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		 *            the updated or new value
 		 */
 		public void updateOrInsertValue(ScriptId id, String name, String value) {
-			String selection = COL_NAME + " = ? AND " + COL_NAMESPACE
-					+ " = ? AND " + COL_VALUENAME + " = ?";
-			String[] selectionArgs = new String[] { id.getName(),
-					id.getNamespace(), name };
-			ContentValues fields = new ContentValues();
-			fields.put(COL_VALUE, value);
 			db.beginTransaction();
+			ContentValues cv = new ContentValues();
+			cv.put(COL_VALUE, value);
 			try {
-				if (db.update(TBL_VALUE, fields, selection, selectionArgs) != 1) {
-					fields.put(COL_NAME, id.getName());
-					fields.put(COL_NAMESPACE, id.getNamespace());
-					fields.put(COL_VALUENAME, name);
-					if (db.insert(TBL_VALUE, null, fields) == -1) {
-						Log.e(TAG,
-								"Error inserting new value into the database (table "
-										+ TBL_VALUE + ")");
-						return;
+				int upd = db.update(TBL_VALUE, cv, COL_NAME + "=? AND " + COL_NAMESPACE
+								+ "=? AND " + COL_VALUENAME + "=?"
+						, new String[]{id.getName(), id.getNamespace(), name});
+				if (upd != 1) {
+					cv.put(COL_NAME, id.getName());
+					cv.put(COL_NAMESPACE, id.getNamespace());
+					cv.put(COL_VALUENAME, name);
+					long insert = db.insert(TBL_VALUE, null, cv);
+					//CMN.debug("insert::", insert);
+					if (insert == -1) {
+						Log.e(TAG, "Error inserting new value into the database (table " + TBL_VALUE + ")");
+					} else {
+						db.setTransactionSuccessful();
 					}
+				} else {
 					db.setTransactionSuccessful();
 				}
+				//CMN.debug("upd::", upd, id, name, value);
 			} finally {
 				db.endTransaction();
 			}
@@ -971,7 +1022,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				db.endTransaction();
 			}
 		}
-
+		
+		public boolean scriptHasRequire(ScriptId scriptId, String required, boolean ) {
+		
+		}
 	}
 
 	/**
