@@ -23,10 +23,10 @@ package at.pardus.android.webview.gm.model;
  * @see <a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a>
  */
 public class ScriptId {
-
+	public long rowID;
 	private String name;
-
 	private String namespace;
+	protected boolean enabled;
 
 	public ScriptId(String name, String namespace) {
 		this.name = name;
@@ -75,7 +75,7 @@ public class ScriptId {
 
 	@Override
 	public String toString() {
-		return name + ", " + namespace;
+		return (enabled?"":"//")+name + ", " + namespace;
 	}
 
 }

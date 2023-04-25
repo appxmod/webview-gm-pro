@@ -4,6 +4,7 @@
 /gradle/
 gradlew
 gradlew.bat
+assets
 
 ### Android template
 # Built application files

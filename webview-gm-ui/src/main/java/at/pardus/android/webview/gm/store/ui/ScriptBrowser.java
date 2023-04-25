@@ -25,7 +25,9 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.DownloadListener;
+import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -110,6 +112,18 @@ public class ScriptBrowser {
 		browser = activity.getLayoutInflater().inflate(
 				R.layout.script_browser, null);
 		webView = (WebViewGm) browser.findViewById(R.id.webView);
+		WebSettings settings = webView.getSettings();
+		settings.setForceDark(WebSettings.FORCE_DARK_ON);
+		settings.setDomStorageEnabled(true);
+		settings.setAppCacheEnabled(true);
+		settings.setDatabaseEnabled(true);
+		settings.setDomStorageEnabled(true);
+		
+		settings.setAllowFileAccess(true);
+		
+		settings.setSupportMultipleWindows(true);
+		
+		WebView.setWebContentsDebuggingEnabled(true);
 		webView.setScriptStore(scriptStore);
 		addressField = (EditText) browser.findViewById(R.id.addressField);
 		addressField
@@ -282,6 +296,7 @@ public class ScriptBrowser {
 							+ failingUrl + ": " + errorCode + " " + description,
 					Toast.LENGTH_LONG).show();
 		}
+		
 
 	}
 
@@ -337,7 +352,15 @@ public class ScriptBrowser {
 		public void onReceivedTitle(WebView view, String title) {
 			scriptBrowser.activity.setTitle(title);
 		}
-
+		
+//		@Override
+//		public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+//			Toast.makeText(
+//					scriptBrowser.activity,
+//					 " Alert:: " + message,
+//					Toast.LENGTH_LONG).show();
+//			return super.onJsAlert(view, url, message, result);
+//		}
 	}
 
 }

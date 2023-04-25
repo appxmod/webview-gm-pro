@@ -16,6 +16,9 @@
 
 package at.pardus.android.webview.gm.model;
 
+import android.text.TextUtils;
+
+import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.util.CriterionMatcher;
 
 /**
@@ -24,19 +27,18 @@ import at.pardus.android.webview.gm.util.CriterionMatcher;
  * @see <a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a>
  */
 public class ScriptCriteria extends ScriptId {
-
-	private String[] exclude;
-
-	private String[] include;
-
 	private String[] match;
 
-	public ScriptCriteria(String name, String namespace, String[] exclude,
-			String[] include, String[] match) {
+	public ScriptCriteria(String name, String namespace, String[] match) {
 		super(name, namespace);
-		this.exclude = exclude;
-		this.include = include;
 		this.match = match;
+		this.enabled = true;
+	}
+	
+	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable) {
+		super(name, namespace);
+		this.match = match;
+		this.enabled = bEnable;
 	}
 
 	/**
@@ -49,44 +51,35 @@ public class ScriptCriteria extends ScriptId {
 	 *         and match do not contain any patterns), false else
 	 */
 	public boolean testUrl(String url) {
-		if (exclude != null) {
-			for (String pattern : exclude) {
-				if (CriterionMatcher.test(pattern, url)) {
-					return false;
-				}
-			}
-		}
-		if ((include == null || include.length == 0)
-				&& (match == null || match.length == 0)) {
-			return true;
-		}
-		if (include != null) {
-			for (String pattern : include) {
-				if (CriterionMatcher.test(pattern, url)) {
-					return true;
-				}
-			}
-		}
+		boolean matched = false;
 		if (match != null) {
-			for (String pattern : match) {
-				if (CriterionMatcher.test(pattern, url)) {
-					return true;
+			//CMN.debug("match::", match);
+			CMN.debug(match);
+			for (int i = 0; i < match.length-1; i+=2) {
+				String type = match[i];
+				String pattern = match[i+1];
+				//CMN.debug("testUrl::", type, pattern, CriterionMatcher.test(pattern, url));
+				if ("=".equals(type) || "+".equals(type)) {
+					if (!matched) {
+						matched = CriterionMatcher.test(pattern, url);
+					}
+				} else {
+					//if ("!".equals(type))
+					if(CriterionMatcher.test(pattern, url)) {
+						return false;
+					}
 				}
 			}
 		}
-		return false;
-	}
-
-	public String[] getExclude() {
-		return exclude;
-	}
-
-	public String[] getInclude() {
-		return include;
+		return matched;
 	}
 
 	public String[] getMatch() {
 		return match;
 	}
-
+	
+	
+	public boolean isEnabled() {
+		return enabled;
+	}
 }

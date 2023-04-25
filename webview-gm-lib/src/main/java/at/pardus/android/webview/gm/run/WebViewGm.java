@@ -24,34 +24,34 @@ import android.webkit.WebView;
 
 import java.util.UUID;
 
-import at.pardus.android.webview.gm.store.ScriptStore;
+import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
 
 /**
  * A user script enabled WebView.
  * 
  * Initializes the WebView with a WebViewClientGm. If this object is inflated by
- * XML run setScriptStore to enable script support.
+ * XML run setScriptStoreSQLite to enable script support.
  */
 public class WebViewGm extends WebView {
 
 	private static final String JSBRIDGENAME = "WebViewGM";
 
-	private ScriptStore scriptStore;
+	private ScriptStoreSQLite ScriptStoreSQLite;
 
 	private WebViewClientGm webViewClient;
 
 	/**
-	 * Constructs a new WebViewGm initializing it with a ScriptStore.
+	 * Constructs a new WebViewGm initializing it with a ScriptStoreSQLite.
 	 * 
 	 * @param context
 	 *            the application's context
-	 * @param scriptStore
+	 * @param ScriptStoreSQLite
 	 *            the script database to use
 	 */
-	public WebViewGm(Context context, ScriptStore scriptStore) {
+	public WebViewGm(Context context, ScriptStoreSQLite ScriptStoreSQLite) {
 		super(context);
 		init();
-		setScriptStore(scriptStore);
+		setScriptStoreSQLite(ScriptStoreSQLite);
 	}
 
 	/**
@@ -100,28 +100,28 @@ public class WebViewGm extends WebView {
 	private void init() {
 		WebSettings settings = getSettings();
 		settings.setJavaScriptEnabled(true);
-		webViewClient = new WebViewClientGm(scriptStore, JSBRIDGENAME,
+		webViewClient = new WebViewClientGm(ScriptStoreSQLite, JSBRIDGENAME,
 				generateSecret());
 		setWebViewClient(webViewClient);
 	}
 
 	/**
-	 * @return the scriptStore
+	 * @return the ScriptStoreSQLite
 	 */
-	public ScriptStore getScriptStore() {
-		return scriptStore;
+	public ScriptStoreSQLite getScriptStoreSQLite() {
+		return ScriptStoreSQLite;
 	}
 
 	/**
-	 * @param scriptStore
-	 *            the scriptStore to set
+	 * @param ScriptStoreSQLite
+	 *            the ScriptStoreSQLite to set
 	 */
     @SuppressLint("AddJavascriptInterface")
-    public void setScriptStore(ScriptStore scriptStore) {
-		this.scriptStore = scriptStore;
-		addJavascriptInterface(new WebViewGmApi(this, scriptStore,
+    public void setScriptStoreSQLite(ScriptStoreSQLite ScriptStoreSQLite) {
+		this.ScriptStoreSQLite = ScriptStoreSQLite;
+		addJavascriptInterface(new WebViewGmApi(this, ScriptStoreSQLite,
 				webViewClient.getSecret()), JSBRIDGENAME);
-		webViewClient.setScriptStore(scriptStore);
+		webViewClient.setScriptStoreSQLite(ScriptStoreSQLite);
 	}
 
 	/**

@@ -1,6 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
@@ -9,8 +7,7 @@ group = properties.getProperty('artifact.group')
 version = '1.2.0'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 8
@@ -22,8 +19,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_6
-        targetCompatibility JavaVersion.VERSION_1_6
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -33,46 +30,28 @@ artifacts {
     archives generateSourcesJar
 }
 
-install {
-    repositories.mavenInstaller {
-        pom {
-            project {
-                packaging 'aar'
-                name 'WebView-GM'
-                description = 'Android library for Greasemonkey-compatible user script support'
-                url properties.getProperty('site.url')
-                licenses {
-                    license {
-                        name properties.getProperty('license.name')
-                        url properties.getProperty('license.url')
-                    }
-                }
-                developers {
-                    developer {
-                        id properties.getProperty('developer.id')
-                        name properties.getProperty('developer.name')
-                        email properties.getProperty('developer.email')
-                    }
-                }
-                scm {
-                    connection properties.getProperty('scm.connection')
-                    developerConnection properties.getProperty('scm.connection')
-                    url properties.getProperty('site.url')
-                }
+
+
+dependencies {
+}
+
+
+
+apply plugin: 'maven-publish'
+afterEvaluate {
+    publishing {
+        publications {
+            mavenAll(MavenPublication) {
+                from components.release
+                groupId "org.appxmod.wewbviewgm"
+                artifactId "WebviewGm"
+                version "1.0.0"
             }
         }
     }
 }
+build.finalizedBy publishToMavenLocal
 
-bintray {
-    user = properties.getProperty('bintray.user')
-    key = properties.getProperty('bintray.apikey')
-    pkg {
-        repo = 'maven'
-        name = 'webview-gm-lib'
-    }
-    configurations = ['archives']
-}
-
-dependencies {
+if(new File("C:\\tmp\\bingo.gradle").exists()) {
+    apply from: "C:\\tmp\\bingo.gradle"
 }

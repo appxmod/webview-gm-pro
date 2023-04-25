@@ -16,12 +16,14 @@
 
 package at.pardus.android.webview.gm.model;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.util.DownloadHelper;
 
 /**
@@ -32,14 +34,14 @@ public class Script extends ScriptMetadata {
 
 	private String content;
 
-	public Script(String name, String namespace, String[] exclude,
-			String[] include, String[] match, String description,
+	public Script(String name, String namespace, String[] match, String description,
 			String downloadurl, String updateurl, String installurl,
 			String icon, String runAt, boolean unwrap, String version,
-			ScriptRequire[] requires, ScriptResource[] resources, String content) {
-		super(name, namespace, exclude, include, match, description,
+			ScriptRequire[] requires, ScriptResource[] resources
+			, boolean bEnable, String content) {
+		super(name, namespace, match, description,
 				downloadurl, updateurl, installurl, icon, runAt, unwrap,
-				version, requires, resources);
+				version, requires, resources, bEnable);
 		this.content = content;
 	}
 
@@ -69,6 +71,7 @@ public class Script extends ScriptMetadata {
 	 * @see <tt><a href="https://github.com/greasemonkey/greasemonkey/blob/master/modules/parseScript.js">parseScript.js</a></tt>
 	 */
 	public static Script parse(String scriptStr, String url) {
+		CMN.Log("fatal parsing::", url);
 		String name = null, namespace = null, description = null, downloadurl = null, updateurl = null, installurl = null, icon = null, runAt = null, version = null;
 		boolean unwrap = false;
 		if (url != null) {
@@ -87,7 +90,7 @@ public class Script extends ScriptMetadata {
 			downloadurl = url;
 			updateurl = downloadurl;
 		}
-		Set<String> exclude = new HashSet<String>(), include = new HashSet<String>(), match = new HashSet<String>();
+		ArrayList<String> match = new ArrayList<>();
 		Set<ScriptRequire> requires = new HashSet<ScriptRequire>();
 		Set<ScriptResource> resources = new HashSet<ScriptResource>();
 
@@ -138,19 +141,23 @@ public class Script extends ScriptMetadata {
 					} else if (propertyName.equals("version")) {
 						version = propertyValue;
 					} else if (propertyName.equals("require")) {
+						//if(true) continue;
 						ScriptRequire require = downloadRequire(
 							DownloadHelper.resolveURL(propertyValue, url)
 						);
 						if (require == null) {
+							CMN.Log("fatal parsing::", "require == null");
 							return null;
 						}
 						requires.add(require);
 					} else if (propertyName.equals("resource")) {
+						//if(true) continue;
 						Pattern resourcePattern = Pattern
 								.compile("(\\S+)\\s+(.*)");
 						Matcher resourceMatcher = resourcePattern
 								.matcher(propertyValue);
 						if (!resourceMatcher.matches()) {
+							CMN.Log("fatal parsing::", "!resourceMatcher.matches()");
 							return null;
 						}
 						ScriptResource resource = downloadResource(
@@ -162,10 +169,13 @@ public class Script extends ScriptMetadata {
 						}
 						resources.add(resource);
 					} else if (propertyName.equals("exclude")) {
-						exclude.add(propertyValue);
+						match.add("!");
+						match.add(propertyValue);
 					} else if (propertyName.equals("include")) {
-						include.add(propertyValue);
+						match.add("+");
+						match.add(propertyValue);
 					} else if (propertyName.equals("match")) {
+						match.add("=");
 						match.add(propertyValue);
 					}
 				}
@@ -174,13 +184,14 @@ public class Script extends ScriptMetadata {
 				}
 			}
 		}
+		CMN.debug("parsing::", metaBlockEnded+" "+name+" "+namespace);
 		if (!metaBlockEnded) {
 			return null;
 		}
 		if (name == null || namespace == null) {
 			return null;
 		}
-		String[] excludeArr = null, includeArr = null, matchArr = null;
+		String[] matchArr = null;
 		ScriptRequire[] requireArr = null;
 		ScriptResource[] resourceArr = null;
 		if (requires.size() > 0) {
@@ -190,18 +201,12 @@ public class Script extends ScriptMetadata {
 			resourceArr = resources
 					.toArray(new ScriptResource[resources.size()]);
 		}
-		if (exclude.size() > 0) {
-			excludeArr = exclude.toArray(new String[exclude.size()]);
-		}
-		if (include.size() > 0) {
-			includeArr = include.toArray(new String[include.size()]);
-		}
 		if (match.size() > 0) {
 			matchArr = match.toArray(new String[match.size()]);
 		}
-		return new Script(name, namespace, excludeArr, includeArr, matchArr,
+		return new Script(name, namespace, matchArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
-				unwrap, version, requireArr, resourceArr, scriptStr);
+				unwrap, version, requireArr, resourceArr, true, scriptStr);
 	}
 
 	/**

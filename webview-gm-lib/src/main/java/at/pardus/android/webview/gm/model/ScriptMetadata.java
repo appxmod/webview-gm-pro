@@ -47,12 +47,11 @@ public class ScriptMetadata extends ScriptCriteria {
 
 	private String version;
 
-	public ScriptMetadata(String name, String namespace, String[] exclude,
-			String[] include, String[] match, String description,
-			String downloadurl, String updateurl, String installurl,
-			String icon, String runAt, boolean unwrap, String version,
-			ScriptRequire[] requires, ScriptResource[] resources) {
-		super(name, namespace, exclude, include, match);
+	public ScriptMetadata(String name, String namespace, String[] match, String description,
+						  String downloadurl, String updateurl, String installurl,
+						  String icon, String runAt, boolean unwrap, String version,
+						  ScriptRequire[] requires, ScriptResource[] resources, boolean bEnable) {
+		super(name, namespace, match);
 		this.description = description;
 		this.downloadurl = downloadurl;
 		this.updateurl = updateurl;
@@ -63,6 +62,7 @@ public class ScriptMetadata extends ScriptCriteria {
 		this.version = version;
 		this.requires = requires;
 		this.resources = resources;
+		this.enabled = bEnable;
 	}
 
 	public String getDescription() {
@@ -109,5 +109,4 @@ public class ScriptMetadata extends ScriptCriteria {
 	public String toString() {
 		return super.toString() + ": " + description;
 	}
-
 }

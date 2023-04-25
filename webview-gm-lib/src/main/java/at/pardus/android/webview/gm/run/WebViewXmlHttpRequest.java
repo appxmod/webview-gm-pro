@@ -16,6 +16,7 @@
 
 package at.pardus.android.webview.gm.run;
 
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.WebView;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.util.UnicodeReader;
 
 public class WebViewXmlHttpRequest {
@@ -233,11 +235,11 @@ public class WebViewXmlHttpRequest {
 			// should be a better way!
 			httpConn.setConnectTimeout(this.timeout);
 			httpConn.setReadTimeout(this.timeout);
-
-			// Explicitly initiate connection.
+			
+			CMN.debug("Explicitly initiate connection.", url);
 			httpConn.connect();
 
-			// Begin transmitting data if requested.
+			CMN.debug("Begin transmitting data if requested.", outputData);
 			if (outputData != null) {
 				duringUpload = true;
 				OutputStream outputStream = httpConn.getOutputStream();
@@ -340,9 +342,12 @@ public class WebViewXmlHttpRequest {
 	}
 
 	private void loadUrlOnUiThread(final String jsUrl) {
+		CMN.debug("loadUrlOnUiThread::evaluateJavascript::", jsUrl);
 		view.post(new Runnable() {
 			public void run() {
-				view.loadUrl(jsUrl);
+				//view.loadUrl(jsUrl);
+				CMN.debug("evaluateJavascript::", jsUrl.substring(11));
+				view.evaluateJavascript(jsUrl.substring(11), null);
 			}
 		});
 	}
@@ -358,13 +363,19 @@ public class WebViewXmlHttpRequest {
 	}
 
 	private void executeOnLoadCallback(WebViewXmlHttpResponse response) {
+		CMN.debug("executeOnLoadCallback::", url, response.toJSONString());
+		CMN.debug("executeOnLoadCallback::this.onLoad=", this.onLoad);
+		
 		if (this.onLoad.equals("")) {
 			return;
 		}
+		CMN.debug("executeOnLoadCallback::", "javascript: (function() { unsafeWindow."
+				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
+				+ ")); console.log('loaded::',"+url+")})()");
 
 		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
 				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
-				+ ")); })()");
+				+ ")); console.log('loaded::',\""+url+"\")})()");
 	}
 
 	private void executeOnProgressCallback(WebViewXmlHttpResponse response) {
@@ -382,7 +393,7 @@ public class WebViewXmlHttpRequest {
 		if (this.onReadyStateChange.equals("")) {
 			return;
 		}
-
+		
 		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
 				+ this.onReadyStateChange + "(JSON.parse("
 				+ response.toJSONString() + ")); })()");
@@ -412,7 +423,7 @@ public class WebViewXmlHttpRequest {
         if (upload == null || upload.length() == 0) {
             return;
         }
-
+		
 		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
 				+ getUploadOnLoad() + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");

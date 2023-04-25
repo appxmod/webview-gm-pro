@@ -26,7 +26,8 @@ import java.util.UUID;
 
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptRequire;
-import at.pardus.android.webview.gm.store.ScriptStore;
+import at.pardus.android.webview.gm.store.CMN;
+import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
 
 /**
  * A user script enabled WebViewClient to be used by WebViewGm.
@@ -46,18 +47,20 @@ public class WebViewClientGm extends WebViewClient {
 	private static final String JSMISSINGFUNCTIONS = "var GM_info = "
 			+ JSMISSINGFUNCTION + "var GM_openInTab = " + JSMISSINGFUNCTION
 			+ "var GM_registerMenuCommand = " + JSMISSINGFUNCTION
+			+ "var GM_notification = " + JSMISSINGFUNCTION
+			+ "var GM_unregisterMenuCommand = " + JSMISSINGFUNCTION
 			+ "var GM_setClipboard = " + JSMISSINGFUNCTION;
 
-	private ScriptStore scriptStore;
+	private ScriptStoreSQLite ScriptStoreSQLite;
 
 	private String jsBridgeName;
 
 	private String secret;
 
 	/**
-	 * Constructs a new WebViewClientGm with a ScriptStore.
+	 * Constructs a new WebViewClientGm with a ScriptStoreSQLite.
 	 * 
-	 * @param scriptStore
+	 * @param ScriptStoreSQLite
 	 *            the script database to query for scripts to run when a page
 	 *            starts/finishes loading
 	 * @param jsBridgeName
@@ -66,9 +69,9 @@ public class WebViewClientGm extends WebViewClient {
 	 * @param secret
 	 *            a random string that is added to calls of the GM API
 	 */
-	public WebViewClientGm(ScriptStore scriptStore, String jsBridgeName,
+	public WebViewClientGm(ScriptStoreSQLite ScriptStoreSQLite, String jsBridgeName,
 			String secret) {
-		this.scriptStore = scriptStore;
+		this.ScriptStoreSQLite = ScriptStoreSQLite;
 		this.jsBridgeName = jsBridgeName;
 		this.secret = secret;
 	}
@@ -97,11 +100,13 @@ public class WebViewClientGm extends WebViewClient {
 	 */
 	protected void runMatchingScripts(WebView view, String url,
 			boolean pageFinished, String jsBeforeScript, String jsAfterScript) {
-		if (scriptStore == null) {
-			Log.w(TAG, "Property scriptStore is null - not running any scripts");
+		if (ScriptStoreSQLite == null) {
+			Log.w(TAG, "Property ScriptStoreSQLite is null - not running any scripts");
 			return;
 		}
-		Script[] matchingScripts = scriptStore.get(url);
+		Script[] matchingScripts = ScriptStoreSQLite.get(url, true, false);
+		//CMN.debug("matchingScripts::", matchingScripts);
+		CMN.debug(matchingScripts);
 		if (matchingScripts == null) {
 			return;
 		}
@@ -156,68 +161,23 @@ public class WebViewClientGm extends WebViewClient {
 						+ ".getResourceText("
 						+ defaultSignature
 						+ ", resourceName); };\n";
+				
 				jsApi += "var GM_xmlhttpRequest = function(details) { \n"
-						+ "if (details.onabort) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onAbortCallback = details.onabort;\n"
-						+ "details.onabort = '"
-						+ callbackPrefix
-						+ "GM_onAbortCallback'; }\n"
-						+ "if (details.onerror) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onErrorCallback = details.onerror;\n"
-						+ "details.onerror = '"
-						+ callbackPrefix
-						+ "GM_onErrorCallback'; }\n"
-						+ "if (details.onload) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onLoadCallback = details.onload;\n"
-						+ "details.onload = '"
-						+ callbackPrefix
-						+ "GM_onLoadCallback'; }\n"
-						+ "if (details.onprogress) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onProgressCallback = details.onprogress;\n"
-						+ "details.onprogress = '"
-						+ callbackPrefix
-						+ "GM_onProgressCallback'; }\n"
-						+ "if (details.onreadystatechange) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onReadyStateChange = details.onreadystatechange;\n"
-						+ "details.onreadystatechange = '"
-						+ callbackPrefix
-						+ "GM_onReadyStateChange'; }\n"
-						+ "if (details.ontimeout) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_onTimeoutCallback = details.ontimeout;\n"
-						+ "details.ontimeout = '"
-						+ callbackPrefix
-						+ "GM_onTimeoutCallback'; }\n"
+						+ "var sig='_'+Math.ceil(Math.random()*10000)"
+							+ "+(''+Date.now()).slice(7)\n"
+						+ "var pfx = '"+callbackPrefix+"';\n"
+						+ "var key;\n"
+						+ "if (details.onabort) { key=sig+'GM_onAbortCallback'+pfx; unsafeWindow[key]=details.onabort; details.onabort=key; }\n"
+						+ "if (details.onerror) { key=sig+'GM_onErrorCallback'+pfx; unsafeWindow[key]=details.onerror; details.onerror=key; }\n"
+						+ "if (details.onload) { key=sig+'GM_onLoadCallback'+pfx; unsafeWindow[key]=details.onload; details.onload=key; }\n"
+						+ "if (details.onprogress) { key=sig+'GM_onProgressCallback'+pfx; unsafeWindow[key]=details.onprogress; details.onprogress=key; }\n"
+						+ "if (details.onreadystatechange) { key=sig+'GM_onReadyStateChange'+pfx; unsafeWindow[key]=details.onreadystatechange; details.onreadystatechange=key; }\n"
+						+ "if (details.ontimeout) { key=sig+'GM_onTimeoutCallback'+pfx; unsafeWindow[key]=details.ontimeout; details.ontimeout=key; }\n"
 						+ "if (details.upload) {\n"
-						+ "if (details.upload.onabort) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_uploadOnAbortCallback = details.upload.onabort;\n"
-						+ "details.upload.onabort = '"
-						+ callbackPrefix
-						+ "GM_uploadOnAbortCallback'; }\n"
-						+ "if (details.upload.onerror) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_uploadOnErrorCallback = details.upload.onerror;\n"
-						+ "details.upload.onerror = '"
-						+ callbackPrefix
-						+ "GM_uploadOnErrorCallback'; }\n"
-						+ "if (details.upload.onload) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_uploadOnLoadCallback = details.upload.onload;\n"
-						+ "details.upload.onload = '"
-						+ callbackPrefix
-						+ "GM_uploadOnLoadCallback'; }\n"
-						+ "if (details.upload.onprogress) { unsafeWindow."
-						+ callbackPrefix
-						+ "GM_uploadOnProgressCallback = details.upload.onprogress;\n"
-						+ "details.upload.onprogress = '"
-						+ callbackPrefix
-						+ "GM_uploadOnProgressCallback'; }\n"
+						+ "if (details.upload.onabort) { key=sig+'GM_uploadOnAbortCallback'+pfx; unsafeWindow[key]=details.upload.onabort; details.upload.onabort=key; }\n"
+						+ "if (details.upload.onerror) { key=sig+'GM_uploadOnErrorCallback'+pfx; unsafeWindow[key]=details.upload.onerror; details.upload.onerror=key; }\n"
+						+ "if (details.upload.onload) { key=sig+'GM_uploadOnLoadCallback'+pfx; unsafeWindow[key]=details.upload.onload; details.upload.onload=key; }\n"
+						+ "if (details.upload.onprogress) { key=sig+'GM_uploadOnProgressCallback'+pfx; unsafeWindow[key]=details.upload.onprogress; details.upload.onprogress=key; }\n"
 						+ "}\n"
 						+ "return JSON.parse("
 						+ jsBridgeName
@@ -226,12 +186,16 @@ public class WebViewClientGm extends WebViewClient {
 						+ ", JSON.stringify(details))); };\n";
 				// TODO implement missing functions
 				jsApi += JSMISSINGFUNCTIONS;
+				jsApi += "var GM_info = {";
+				jsApi += "script:{version:\""+script.getVersion().replace("\"", "\\\"")+"\"}";
+				jsApi += "};\n";
 
 				// Get @require'd scripts to inject for this script.
 				String jsAllRequires = "";
 				ScriptRequire[] requires = script.getRequires();
 				if (requires != null) {
 					for (ScriptRequire currentRequire : requires) {
+						CMN.debug("currentRequire::", currentRequire.getContent());
 						jsAllRequires += (currentRequire.getContent() + "\n");
 					}
 				}
@@ -239,6 +203,7 @@ public class WebViewClientGm extends WebViewClient {
                 String jsCode = jsApi + jsAllRequires + jsBeforeScript + script
                         .getContent() + jsAfterScript;
                 if (!script.isUnwrap()) {
+					// todo FIXME java.lang.OutOfMemoryError: Failed to allocate a 16 byte allocation with 1795200 free bytes and 1753KB until OOM
                     jsCode = JSCONTAINERSTART + jsCode + JSCONTAINEREND;
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -261,18 +226,18 @@ public class WebViewClientGm extends WebViewClient {
 	}
 
 	/**
-	 * @return the scriptStore
+	 * @return the ScriptStoreSQLite
 	 */
-	public ScriptStore getScriptStore() {
-		return scriptStore;
+	public ScriptStoreSQLite getScriptStoreSQLite() {
+		return ScriptStoreSQLite;
 	}
 
 	/**
-	 * @param scriptStore
-	 *            the scriptStore to set
+	 * @param ScriptStoreSQLite
+	 *            the ScriptStoreSQLite to set
 	 */
-	public void setScriptStore(ScriptStore scriptStore) {
-		this.scriptStore = scriptStore;
+	public void setScriptStoreSQLite(ScriptStoreSQLite ScriptStoreSQLite) {
+		this.ScriptStoreSQLite = ScriptStoreSQLite;
 	}
 
 	/**

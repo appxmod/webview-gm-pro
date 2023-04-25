@@ -18,11 +18,13 @@ package at.pardus.android.webview.gm.run;
 
 import android.util.Log;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptResource;
-import at.pardus.android.webview.gm.store.ScriptStore;
+import at.pardus.android.webview.gm.store.CMN;
+import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
 
 /**
  * Contains methods simulating GM functions that need access to the
@@ -32,23 +34,23 @@ public class WebViewGmApi {
 
 	private static final String TAG = WebViewGmApi.class.getName();
 
-	private WebViewGm view;
+	private WebView view;
 
-	private ScriptStore scriptStore;
+	private ScriptStoreSQLite ScriptStoreSQLite;
 
 	private String secret;
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param scriptStore
+	 * @param ScriptStoreSQLite
 	 *            the database to query for values
 	 * @param secret
 	 *            the secret string to compare in each call
 	 */
-	public WebViewGmApi(WebViewGm view, ScriptStore scriptStore, String secret) {
+	public WebViewGmApi(WebView view, ScriptStoreSQLite ScriptStoreSQLite, String secret) {
 		this.view = view;
-		this.scriptStore = scriptStore;
+		this.ScriptStoreSQLite = ScriptStoreSQLite;
 		this.secret = secret;
 	}
 
@@ -72,7 +74,7 @@ public class WebViewGmApi {
 			Log.e(TAG, "Call to \"listValues\" did not supply correct secret");
 			return null;
 		}
-		String[] values = scriptStore.getValueNames(new ScriptId(scriptName,
+		String[] values = ScriptStoreSQLite.getValueNames(new ScriptId(scriptName,
 				scriptNamespace));
 		if (values == null || values.length == 0) {
 			return "";
@@ -109,7 +111,7 @@ public class WebViewGmApi {
 			Log.e(TAG, "Call to \"getValue\" did not supply correct secret");
 			return null;
 		}
-		String v = scriptStore.getValue(new ScriptId(scriptName,
+		String v = ScriptStoreSQLite.getValue(new ScriptId(scriptName,
 				scriptNamespace), name);
 		return (v != null) ? v : defaultValue;
 	}
@@ -136,7 +138,7 @@ public class WebViewGmApi {
 			Log.e(TAG, "Call to \"setValue\" did not supply correct secret");
 			return;
 		}
-		scriptStore.setValue(new ScriptId(scriptName, scriptNamespace), name,
+		ScriptStoreSQLite.setValue(new ScriptId(scriptName, scriptNamespace), name,
 				value);
 	}
 
@@ -160,7 +162,7 @@ public class WebViewGmApi {
 			Log.e(TAG, "Call to \"deleteValue\" did not supply correct secret");
 			return;
 		}
-		scriptStore
+		ScriptStoreSQLite
 				.deleteValue(new ScriptId(scriptName, scriptNamespace), name);
 	}
 
@@ -203,13 +205,14 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String getResourceURL(String scriptName, String scriptNamespace,
 			String secret, String resourceName) {
+		CMN.debug("getResourceURL::", resourceName);
 		if (!this.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"getResourceURL\" did not supply correct secret");
 			return "";
 		}
 
-		Script script = scriptStore.get(new ScriptId(scriptName,
+		Script script = ScriptStoreSQLite.get(new ScriptId(scriptName,
 				scriptNamespace));
 
 		for (ScriptResource resource : script.getResources()) {
@@ -219,7 +222,7 @@ public class WebViewGmApi {
 				continue;
 			}
 
-			return resource.getJavascriptUrl();
+			return resource.getJavascriptUrl(); // todo safety
 		}
 
 		Log.e(TAG, "Requested resource: " + resourceName + " not found! ("
@@ -251,7 +254,7 @@ public class WebViewGmApi {
 			return "";
 		}
 
-		Script script = scriptStore.get(new ScriptId(scriptName,
+		Script script = ScriptStoreSQLite.get(new ScriptId(scriptName,
 				scriptNamespace));
 
 		for (ScriptResource resource : script.getResources()) {
@@ -266,8 +269,7 @@ public class WebViewGmApi {
 	}
 
 	/**
-	 * Equivalent of GM_getResourceText. Retrieve @resource'd data. as UTF-8
-	 * encoded text.
+	 * Equivalent of GM_xmlHttpRequest.
 	 *
 	 * @param scriptName
 	 *            the name of the calling script

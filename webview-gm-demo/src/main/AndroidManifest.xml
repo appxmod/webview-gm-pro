@@ -7,7 +7,9 @@
 
     <application
         android:allowBackup="true"
-        tools:ignore="GoogleAppIndexingWarning,MissingApplicationIcon">
+        tools:ignore="GoogleAppIndexingWarning,MissingApplicationIcon"
+		android:usesCleartextTraffic="true"
+		>
         <activity
             android:name="at.pardus.android.webview.gm.demo.WebViewGmImpl"
             android:configChanges="orientation|keyboardHidden"

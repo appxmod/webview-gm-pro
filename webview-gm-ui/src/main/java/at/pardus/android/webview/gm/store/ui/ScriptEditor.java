@@ -20,9 +20,15 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import org.apache.commons.text.StringEscapeUtils;
 
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptId;
@@ -41,10 +47,13 @@ public class ScriptEditor {
 
 	protected View editForm;
 
-	protected EditText scriptContent;
+//	protected EditText scriptContent;
+	
+	protected WebView scriptContent;
 
 	protected Button saveButton;
-
+	private Script script;
+	
 	/**
 	 * Returns the form to edit a script.
 	 * 
@@ -52,13 +61,16 @@ public class ScriptEditor {
 	 *            the ID of the script to edit or null to add a new script
 	 * @return the edit script view
 	 */
+	
+	
 	public View getEditForm(ScriptId scriptId) {
-		Script script = null;
+		script = null;
 		if (scriptId != null) {
 			script = scriptStore.get(scriptId);
 		}
 		if (script != null) {
-			scriptContent.setText(script.getContent());
+			//scriptContent.setText(script.getContent());
+			scriptContent.loadUrl("file:///android_asset/codemirror.html");
 		}
 		loadedScript = script;
 		return editForm;
@@ -68,48 +80,54 @@ public class ScriptEditor {
 	 * Saves an existing or new script.
 	 */
 	protected void saveScript() {
-		new Thread() {
-			public void run() {
-				Script script = Script.parse(
-						scriptContent.getText().toString(),
-						(loadedScript == null) ? null : loadedScript
-								.getDownloadurl());
-				if (script == null) {
-					makeToastOnUiThread(
-							activity.getString(R.string.error_saving_script)
-									+ ": "
-									+ activity
-											.getString(R.string.syntax_or_dl_fail),
-							Toast.LENGTH_LONG);
-					return;
-				}
-				if (loadedScript == null) {
-					scriptStore.add(script);
-					makeToastOnUiThread(
-							activity.getString(R.string.added_new_script) + " "
-									+ script.getName(), Toast.LENGTH_LONG);
-				} else {
-					if (!loadedScript.equals(script)) {
-						if (scriptStore.get(script) != null) {
+//		new Thread() {
+//			public void run() {
+				scriptContent.evaluateJavascript("editor.doc.getValue()", new ValueCallback<String>() {
+					@Override
+					public void onReceiveValue(String value) {
+						System.out.println(StringEscapeUtils.unescapeJava(value.substring(1,value.length()-1)));
+						Script script = Script.parse(
+								StringEscapeUtils.unescapeJava(value.substring(1,value.length()-1)),
+								(loadedScript == null) ? null : loadedScript
+										.getDownloadurl());
+						if (script == null) {
 							makeToastOnUiThread(
 									activity.getString(R.string.error_saving_script)
 											+ ": "
 											+ activity
-													.getString(R.string.new_script_id_exists),
+													.getString(R.string.syntax_or_dl_fail),
 									Toast.LENGTH_LONG);
 							return;
 						}
-						scriptStore.delete(loadedScript);
+						if (loadedScript == null) {
+							scriptStore.add(script);
+							makeToastOnUiThread(
+									activity.getString(R.string.added_new_script) + " "
+											+ script.getName(), Toast.LENGTH_LONG);
+						} else {
+							if (!loadedScript.equals(script)) {
+								if (scriptStore.get(script) != null) {
+									makeToastOnUiThread(
+											activity.getString(R.string.error_saving_script)
+													+ ": "
+													+ activity
+															.getString(R.string.new_script_id_exists),
+											Toast.LENGTH_LONG);
+									return;
+								}
+								scriptStore.delete(loadedScript);
+							}
+							scriptStore.add(script);
+							makeToastOnUiThread(
+									activity.getString(R.string.edited_script) + " "
+											+ script.getName(), Toast.LENGTH_SHORT);
+						}
+						loadedScript = null;
 					}
-					scriptStore.add(script);
-					makeToastOnUiThread(
-							activity.getString(R.string.edited_script) + " "
-									+ script.getName(), Toast.LENGTH_SHORT);
-				}
-				loadedScript = null;
+				});
 				openScriptListOnUiThread();
-			}
-		}.start();
+//			}
+//		}.start();
 	}
 
 	/**
@@ -138,6 +156,13 @@ public class ScriptEditor {
 			}
 		});
 	}
+	
+	class JsBridge{
+		@JavascriptInterface
+		public String getDoc(){
+			return script.getContent();
+		}
+	}
 
 	/**
 	 * Inflates the text area and save button from XML and registers its
@@ -147,7 +172,26 @@ public class ScriptEditor {
     private void init() {
 		editForm = activity.getLayoutInflater().inflate(
 				R.layout.edit_script, null);
-		scriptContent = (EditText) editForm.findViewById(R.id.script_content);
+		scriptContent = editForm.findViewById(R.id.script_content);
+		
+		WebSettings settings = scriptContent.getSettings();
+		settings.setJavaScriptEnabled(true);
+		
+		settings.setForceDark(WebSettings.FORCE_DARK_ON);
+		settings.setDomStorageEnabled(true);
+		settings.setAppCacheEnabled(true);
+		settings.setDatabaseEnabled(true);
+		settings.setDomStorageEnabled(true);
+		
+		settings.setAllowFileAccess(true);
+		
+		settings.setSupportMultipleWindows(true);
+		
+		settings.setBuiltInZoomControls(true);
+		
+		scriptContent.addJavascriptInterface(new JsBridge(), "app");
+		
+		
 		saveButton = (Button) editForm.findViewById(R.id.save_button);
 		saveButton.setOnClickListener(new View.OnClickListener() {
 			@Override

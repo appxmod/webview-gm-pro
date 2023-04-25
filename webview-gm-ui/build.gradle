@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
+//apply plugin: 'com.github.dcendents.android-maven'
+//apply plugin: 'com.jfrog.bintray'
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
@@ -9,12 +9,11 @@ group = properties.getProperty('artifact.group')
 version = '1.2.0'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 8
-        targetSdkVersion 22
+        targetSdkVersion 30
     }
     buildTypes {
         release {
@@ -22,8 +21,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_6
-        targetCompatibility JavaVersion.VERSION_1_6
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -33,48 +32,7 @@ artifacts {
     archives generateSourcesJar
 }
 
-install {
-    repositories.mavenInstaller {
-        pom {
-            project {
-                packaging 'aar'
-                name 'WebView-GM UI'
-                description = 'Common UI classes that may be used with webview-gm - the Android library for Greasemonkey-compatible user script support'
-                url properties.getProperty('site.url')
-                licenses {
-                    license {
-                        name properties.getProperty('license.name')
-                        url properties.getProperty('license.url')
-                    }
-                }
-                developers {
-                    developer {
-                        id properties.getProperty('developer.id')
-                        name properties.getProperty('developer.name')
-                        email properties.getProperty('developer.email')
-                    }
-                }
-                scm {
-                    connection properties.getProperty('scm.connection')
-                    developerConnection properties.getProperty('scm.connection')
-                    url properties.getProperty('site.url')
-                }
-            }
-        }
-    }
-}
-
-bintray {
-    user = properties.getProperty('bintray.user')
-    key = properties.getProperty('bintray.apikey')
-    pkg {
-        repo = 'maven'
-        name = 'webview-gm-ui'
-    }
-    configurations = ['archives']
-}
-
 dependencies {
-    compile(new File('webview-gm-lib').exists() ? project(':webview-gm-lib') : 'at.pardus' +
-            '.android:webview-gm-lib:1.2.0')
+    api(project(':webview-gm-lib'))
+    api('org.apache.commons:commons-text:1.9')
 }
