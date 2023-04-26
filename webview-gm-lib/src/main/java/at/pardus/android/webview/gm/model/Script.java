@@ -39,11 +39,12 @@ public class Script extends ScriptMetadata {
 			String downloadurl, String updateurl, String installurl,
 			String icon, String runAt, boolean unwrap, String version,
 			ScriptRequire[] requires, ScriptResource[] resources
-			, boolean bEnable, String content) {
+			, boolean bEnable, int rights, String content) {
 		super(name, namespace, match, description,
 				downloadurl, updateurl, installurl, icon, runAt, unwrap,
 				version, requires, resources, bEnable);
 		this.content = content;
+		this.rights = rights;
 	}
 
 	public String getContent() {
@@ -72,7 +73,7 @@ public class Script extends ScriptMetadata {
 	 * @see <tt><a href="https://github.com/greasemonkey/greasemonkey/blob/master/modules/parseScript.js">parseScript.js</a></tt>
 	 */
 	public static Script parse(String scriptStr, String url, ScriptStoreSQLite scriptStore) {
-		CMN.Log("fatal parsing::", url);
+		CMN.debug("fatal parsing::", url);
 		String name = null, namespace = null, description = null, downloadurl = null, updateurl = null, installurl = null, icon = null, runAt = null, version = null;
 		boolean unwrap = false;
 		if (url != null) {
@@ -99,6 +100,7 @@ public class Script extends ScriptMetadata {
 		Scanner scanner = new Scanner(scriptStr);
 		boolean inMetaBlock = false;
 		boolean metaBlockEnded = false;
+		ScriptCriteria tmp = new ScriptCriteria(name, namespace, null);
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			if (!inMetaBlock) {
@@ -135,22 +137,84 @@ public class Script extends ScriptMetadata {
 					} else if (propertyName.equals("icon")) {
 						icon = DownloadHelper.resolveURL(propertyValue, url);
 					} else if (propertyName.equals("run-at")) {
-						if (propertyValue.equals(RUNATSTART)
-								|| propertyValue.equals(RUNATEND)) {
-							runAt = propertyValue;
+						if (propertyValue.equals(RUNATSTART)) {
+							tmp.hasRightRunStart(true);
 						}
-					} else if (propertyName.equals("version")) {
+						if (propertyValue.equals(RUNATEND)) {
+							tmp.hasRightRunEnd(true);
+						}
+					}
+					else if (propertyName.equals("grant")) {
+						switch (propertyName) {
+							case "GM_getValue":
+								tmp.hasRightGetValue(true);
+							break;
+							case "GM_setValue":
+								tmp.hasRightSetValue(true);
+							break;
+							case "GM_openInTab":
+								tmp.hasRightOpenInTab(true);
+							break;
+							case "GM_registerMenuCommand":
+								tmp.hasRightRegisterMenuCommand(true);
+							break;
+							case "GM_deleteValue":
+								tmp.hasRightDeleteValue(true);
+							break;
+							case "GM_listValues":
+								tmp.hasRightListValues(true);
+							break;
+							case "GM_addStyle":
+								tmp.hasRightAddStyle(true);
+							break;
+							case "GM_info":
+								tmp.hasRightInfo(true);
+							break;
+							case "GM_notification":
+								tmp.hasRightNotification(true);
+							break;
+							case "GM_unregisterMenuCommand":
+								tmp.hasRightUnregisterMenuCommand(true);
+							break;
+							case "GM_setClipboard":
+								tmp.hasRightSetClipboard(true);
+							break;
+							case "GM_addValueChangeListener":
+								tmp.hasRightAddValueChangeListener(true);
+							break;
+							case "GM_removeValueChangeListener":
+								tmp.hasRightRemoveValueChangeListener(true);
+							break;
+							case "GM_getResourceText":
+								tmp.hasRightGetResourceText(true);
+							break;
+							case "GM_getResourceURL":
+								tmp.hasRightGetResourceURL(true);
+							break;
+							case "GM_addElement":
+								tmp.hasRightAddElement(true);
+							break;
+							case "GM_xmlHttpRequest":
+								tmp.hasRightXmlHttpRequest(true);
+							break;
+							case "GM_download":
+								tmp.hasRightDownload(true);
+							break;
+						}
+					}
+					else if (propertyName.equals("version")) {
 						version = propertyValue;
 					}
 					else if (propertyName.equals("require")) {
 						//if(true) continue;
 						String required = DownloadHelper.resolveURL(propertyValue, url);
-						if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), required)) {
-							ScriptRequire require = downloadRequire(required);
-							if (require != null) {
-								requires.add(require);
+						ScriptRequire require = new ScriptRequire(required, null);
+						if (name!=null && namespace!=null) {
+							if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), required)) {
+								require.setContent(DownloadHelper.downloadScript(required));
 							}
 						}
+						requires.add(require);
 					}
 					else if (propertyName.equals("resource")) {
 						//if(true) continue;
@@ -161,13 +225,13 @@ public class Script extends ScriptMetadata {
 							return null;
 						}
 						String required = resourceMatcher.group(1);
-						if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), required)) {
-							ScriptResource resource = downloadResource(required
-									, DownloadHelper.resolveURL(resourceMatcher.group(2), url));
-							if (resource == null) {
-								resources.add(resource);
+						ScriptResource resource = new ScriptResource(required, DownloadHelper.resolveURL(resourceMatcher.group(2), url), null);
+						if (name!=null && namespace!=null) {
+							if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), required)) {
+								resource.setData(DownloadHelper.downloadBytes(resource.getUrl()));
 							}
 						}
+						resources.add(resource);
 					} else if (propertyName.equals("exclude")) {
 						match.add("!");
 						match.add(propertyValue);
@@ -204,54 +268,12 @@ public class Script extends ScriptMetadata {
 		if (match.size() > 0) {
 			matchArr = match.toArray(new String[match.size()]);
 		}
+		if (tmp.hasRightToRun()==0) {
+			tmp.hasRightRunEnd(true);
+		}
+		CMN.debug("tmp.rights::", tmp.rights);
 		return new Script(name, namespace, matchArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
-				unwrap, version, requireArr, resourceArr, true, scriptStr);
-	}
-
-	/**
-	 * Downloads a @require'd script for the current script.
-	 * 
-	 * Not to be run on the UI thread.
-	 *
-	 * @param requireUrl
-	 *            a @require URL indicating where to download a required script
-	 *            from.
-	 * @return a boolean value indicating whether the download operation was
-	 *         successful for all @require entries.
-	 * @see <tt><a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a></tt>
-	 */
-	public static ScriptRequire downloadRequire(String requireUrl) {
-		String requireContent = DownloadHelper.downloadScript(requireUrl);
-
-		if (requireContent == null) {
-			return null;
-		}
-
-		return new ScriptRequire(requireUrl, requireContent);
-	}
-
-	/**
-	 * Downloads @resource'd file for the current script.
-	 * 
-	 * Not to be run on the UI thread.
-	 *
-	 * @param resourceName
-	 *            a @resource name, to identify the downloaded resource.
-	 * @param resourceUrl
-	 *            a @resource URL indicating where to download a resource from.
-	 * @return a boolean value indicating whether the download operation was
-	 *         successful for all @resource entries.
-	 * @see <tt><a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a></tt>
-	 */
-	public static ScriptResource downloadResource(String resourceName,
-			String resourceUrl) {
-		byte[] resourceData = DownloadHelper.downloadBytes(resourceUrl);
-
-		if (resourceData == null) {
-			return null;
-		}
-
-		return new ScriptResource(resourceName, resourceUrl, resourceData);
+				unwrap, version, requireArr, resourceArr, true, tmp.rights, scriptStr);
 	}
 }

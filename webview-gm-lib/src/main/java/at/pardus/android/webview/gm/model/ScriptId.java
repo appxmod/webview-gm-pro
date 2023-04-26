@@ -24,9 +24,8 @@ package at.pardus.android.webview.gm.model;
  */
 public class ScriptId {
 	public long rowID;
-	private String name;
-	private String namespace;
-	protected boolean enabled;
+	protected String name;
+	protected String namespace;
 
 	public ScriptId(String name, String namespace) {
 		this.name = name;
@@ -55,9 +54,7 @@ public class ScriptId {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof ScriptId))
 			return false;
 		ScriptId other = (ScriptId) obj;
 		if (name == null) {
@@ -75,7 +72,7 @@ public class ScriptId {
 
 	@Override
 	public String toString() {
-		return (enabled?"":"//")+name + ", " + namespace;
+		return name + ", " + namespace;
 	}
 
 }

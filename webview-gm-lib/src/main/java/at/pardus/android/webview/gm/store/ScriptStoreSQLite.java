@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,22 +59,34 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	private ScriptDbHelper dbHelper;
 
 	private ScriptCache cache;
+	
+	public final HashMap<ScriptCriteria, ScriptCriteria> registryMap = new HashMap<>();
+	public final ArrayList<ScriptCriteria> registry = new ArrayList<>();
+	
 
 	// @Override
-	public Script[] get(String url, boolean enabled, boolean metaOnly) {
+	public ScriptCriteria[] get(String url, boolean enabled, boolean metaOnly) {
 		// get matchingScripts to run
-		Script[] scripts = cache.get(url);
+		ScriptCriteria[] scripts = cache.get(url);
 		if (scripts == null) {
 			if (dbHelper == null) {
 				Log.w(TAG, "Cannot get user scripts (database not available)");
 				return null;
 			}
-			ScriptId[] matchingIds = cache.getMatchingScriptIds(url, enabled);
+			List<ScriptCriteria> matches = new ArrayList<ScriptCriteria>();
+			for (ScriptCriteria c : registry) { // getMatchingScriptIds
+				if (!enabled || c.isEnabled()) {
+					if (c.testUrl(url)) {
+						matches.add(c);
+					}
+				}
+			}
+			ScriptCriteria[] matchingIds = matches.toArray(new ScriptCriteria[matches.size()]);
 			CMN.debug("matchingIds::", matchingIds);
 			CMN.debug(matchingIds);
-			scripts = matchingIds.length==0?null:dbHelper.selectScripts(matchingIds, null, metaOnly);
+			//scripts = matchingIds.length==0?null:dbHelper.selectScripts(matchingIds, null, metaOnly);
 			// todo separate id id cahce and script cache
-			cache.put(url, scripts);
+			cache.put(url, matchingIds);
 		}
 		return scripts;
 	}
@@ -100,11 +113,12 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
         return dbHelper.selectScripts(null, null, metaOnly);
 	}
 
+	/** ret -1 : fail   0 : added  1 : edited */
 	// @Override
-	public void add(Script script) {
+	public int add(Script script) {
 		if (dbHelper == null) {
 			Log.e(TAG, "Cannot add user script (database not available)");
-			return;
+			return -1;
 		}
 		long rowId = -1;
 		try {
@@ -119,8 +133,12 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			CMN.debug(e);
 		}
 		//dbHelper.deleteScript(script);
-		dbHelper.insertScript(script, rowId);
-		initCache();
+		if (dbHelper.insertScript(script, rowId) != -1) {
+			initCache(); // todo optimize
+			return rowId == -1 ? 0 : 1;
+		} else {
+			return -1;
+		}
 	}
 
 	// @Override
@@ -225,7 +243,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		if (dbHelper != null) {
 			return;
 		}
-		dbHelper = new ScriptDbHelper(context);
+		dbHelper = new ScriptDbHelper(this);
 		initCache();
 	}
 
@@ -233,7 +251,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		if (dbHelper != null) {
 			return;
 		}
-		dbHelper = new ScriptDbHelper(context, name);
+		dbHelper = new ScriptDbHelper(this, name);
 		initCache();
 	}
 
@@ -297,9 +315,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	private static class ScriptDbHelper extends SQLiteOpenHelper {
 
 		// V2 added tables for @require and @resource metadata directive.
+		private static final int DB_SCHEMA_VERSION_4 = 4;
 		private static final int DB_SCHEMA_VERSION_3 = 3;
 		private static final int DB_SCHEMA_VERSION_2 = 2;
-		private static final int DB_VERSION = DB_SCHEMA_VERSION_3;
+		private static final int DB_VERSION = DB_SCHEMA_VERSION_4;
 
 		private static final String DB = "webviewgm";
 
@@ -316,6 +335,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String COL_VERSION = "version";
 		private static final String COL_CONTENT = "content";
 		private static final String COL_ENABLED = "enabled";
+		private static final String COL_RIGHTS = "rights";
 		private static final String TBL_SCRIPT_CREATE = "CREATE TABLE "
 				+ TBL_SCRIPT + " (" + COL_NAME + " TEXT NOT NULL" + ", "
 				+ COL_NAMESPACE + " TEXT NOT NULL" + ", " + COL_DESCRIPTION
@@ -323,9 +343,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				+ COL_UPDATEURL + " TEXT" + ", " + COL_INSTALLURL + " TEXT"
 				+ ", " + COL_ICON + " TEXT" + ", " + COL_RUNAT + " TEXT" + ", "
 				+ COL_UNWRAP + " INTEGER" + ", " + COL_VERSION + " TEXT" + ", "
-				+ COL_CONTENT + " TEXT NOT NULL" + ", " + COL_ENABLED
-				+ " INTEGER NOT NULL DEFAULT 1" + ", PRIMARY KEY (" + COL_NAME
-				+ ", " + COL_NAMESPACE + "));";
+				+ COL_CONTENT + " TEXT NOT NULL" + ", "
+				+ COL_ENABLED + " INTEGER NOT NULL DEFAULT 1" + ", "
+				+ COL_RIGHTS + " INTEGER NOT NULL DEFAULT 0" + ", "
+				+ "PRIMARY KEY (" + COL_NAME + ", " + COL_NAMESPACE + "));";
 
 //		private static final String COL_PATTERN = "pattern";
 		
@@ -335,8 +356,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String TBL_MATCH_CREATE = "CREATE TABLE "
 				+ TBL_MATCH + " (" + COL_NAME + " TEXT NOT NULL" + ", "
 				+ COL_NAMESPACE + " TEXT NOT NULL"
-				+ ", " + COL_PATTERNS + " TEXT NOT NULL" + ", " + COL_ENABLED + " INTEGER NOT NULL DEFAULT 1"
-				+ ", PRIMARY KEY (" + COL_NAME + ", "
+				+ ", " + COL_PATTERNS + " TEXT NOT NULL" + ", "
+				+ COL_ENABLED + " INTEGER NOT NULL DEFAULT 1" + ", "
+				+ COL_RIGHTS + " INTEGER NOT NULL DEFAULT 0" + ", "
+				+ "PRIMARY KEY (" + COL_NAME + ", "
 				+ COL_NAMESPACE + "), FOREIGN KEY ("
 				+ COL_NAME + ", " + COL_NAMESPACE + ") REFERENCES "
 				+ TBL_SCRIPT + " (" + COL_NAME + ", " + COL_NAMESPACE
@@ -422,30 +445,33 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String[] COLS_PATTERN = new String[] { COL_NAME,
 				COL_NAMESPACE, COL_PATTERNS };
 		private static final String[] COLS_PATTERN_ENABLED = new String[] { COL_NAME,
-				COL_NAMESPACE, COL_PATTERNS, COL_ENABLED };
+				COL_NAMESPACE, COL_PATTERNS, COL_ENABLED, COL_RIGHTS };
 		private static final String[] COLS_REQUIRE = new String[] { COL_NAME,
 				COL_NAMESPACE, COL_DOWNLOADURL, COL_CONTENT };
 		private static final String[] COLS_RESOURCE = new String[] { COL_NAME,
 				COL_NAMESPACE, COL_DOWNLOADURL, COL_RESOURCENAME, COL_DATA };
 		private static final String[] COLS_SCRIPT = new String[] { COL_NAME
 				, COL_NAMESPACE, COL_DESCRIPTION, COL_DOWNLOADURL, COL_UPDATEURL
-				, COL_INSTALLURL, COL_ICON, COL_RUNAT, COL_UNWRAP, COL_VERSION
-				, COL_ENABLED, COL_CONTENT };
+				, COL_INSTALLURL, COL_ICON/*, COL_RUNAT*//*, COL_UNWRAP*/, COL_VERSION
+				, COL_ENABLED, COL_RIGHTS, COL_CONTENT };
 		private static final String[] COLS_SCRIPT_META = new String[] { COL_NAME
 				, COL_NAMESPACE, COL_DESCRIPTION, COL_DOWNLOADURL, COL_UPDATEURL
-				, COL_INSTALLURL, COL_ICON, COL_RUNAT, COL_UNWRAP, COL_VERSION
-				, COL_ENABLED };
-
+				, COL_INSTALLURL, COL_ICON/*, COL_RUNAT*//*, COL_UNWRAP*/, COL_VERSION
+				, COL_ENABLED, COL_RIGHTS };
+		
 		private SQLiteDatabase db;
+		private final ScriptStoreSQLite scriptStore;
 
-		public ScriptDbHelper(Context context) {
-			super(context, DB, null, DB_VERSION);
+		public ScriptDbHelper(ScriptStoreSQLite scriptStore) {
+			super(scriptStore.context, DB, null, DB_VERSION);
+			this.scriptStore = scriptStore;
 			db = getWritableDatabase();
 			db.execSQL("PRAGMA foreign_keys = ON;");
 		}
 		
-		public ScriptDbHelper(Context context, String pathName) {
-			super(context, pathName, null, DB_VERSION);
+		public ScriptDbHelper(ScriptStoreSQLite scriptStore, String pathName) {
+			super(scriptStore.context, pathName, null, DB_VERSION);
+			this.scriptStore = scriptStore;
 			db = getWritableDatabase();
 			db.execSQL("PRAGMA foreign_keys = ON;");
 		}
@@ -471,6 +497,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				if (v == DB_SCHEMA_VERSION_3) {
 					db.execSQL("DROP TABLE IF EXISTS "+TBL_MATCH);
 					db.execSQL(TBL_MATCH_CREATE);
+				}
+				if (v == DB_SCHEMA_VERSION_4) {
+					db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
+					db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
 				}
 			}
 		}
@@ -536,18 +566,20 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			
 			int i = 0;
 			while (cursor.moveToNext()) {
-				final String name = cursor.getString(0); final String namespace = cursor.getString(1);
+				int cc = 0;
+				final String name = cursor.getString(cc++); final String namespace = cursor.getString(cc++);
 				final ScriptId id = new ScriptId(name, namespace);
 				String[] matchArr;
-				String description = cursor.getString(2);
-				String downloadurl = cursor.getString(3);
-				String updateurl = cursor.getString(4);
-				String installurl = cursor.getString(5);
-				String icon = cursor.getString(6);
-				String runat = cursor.getString(7);
-				int unwrap = cursor.getInt(8);
-				String version = cursor.getString(9);
-				boolean bEnable = cursor.getInt(10)!=0;
+				String description = cursor.getString(cc++);
+				String downloadurl = cursor.getString(cc++);
+				String updateurl = cursor.getString(cc++);
+				String installurl = cursor.getString(cc++);
+				String icon = cursor.getString(cc++);
+				String runat = null;
+				int unwrap = 0;
+				String version = cursor.getString(cc++);
+				boolean bEnable = cursor.getInt(cc++)!=0;
+				int rights = cursor.getInt(cc++);
 				String content;
 				ScriptRequire[] requireArr;
 				ScriptResource[] resourceArr;
@@ -563,12 +595,12 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					List<ScriptResource> resource = resources.get(id);
 					resourceArr = (resource == null) ? null
 							: resource.toArray(new ScriptResource[resource.size()]);
-					content = cursor.getString(11);
-					matchArr = matches.get(id);
+					content = cursor.getString(12);
+					matchArr = matches.get(cc++);
 				}
 				scriptsArr[i] = new Script(name, namespace, matchArr, description, downloadurl,
 						updateurl, installurl, icon, runat, unwrap == 1,
-						version, requireArr, resourceArr, bEnable, content);
+						version, requireArr, resourceArr, bEnable, rights, content);
 				
 				i++;
 			}
@@ -594,6 +626,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			String[] selectionArgsArr = null, selectionIdArgsArr = null;
 			boolean bEnable = true;
 			if (ids != null || enabled != null) {
+				// not used
 				StringBuilder selection = new StringBuilder();
 				List<String> selectionArgs = new ArrayList<String>();
 				if (ids != null) {
@@ -615,20 +648,42 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				}
 				selectionStr = selection.toString();
 				selectionArgsArr = selectionArgs.toArray(new String[selectionArgs.size()]);
-			} else {
+			}
+			else {
+				// select all
 				Cursor cursor = db.query(TBL_MATCH, COLS_PATTERN_ENABLED, null, null
 						, null, null, null);
-				ScriptCriteria[] ret = new ScriptCriteria[cursor.getCount()];
+				ScriptCriteria[] ret = null;
+				if(BuildConfig.DEBUG) ret = new ScriptCriteria[cursor.getCount()];
 				int cc=0;
 				while (cursor.moveToNext()) {
-					ret[cc++] = new ScriptCriteria(cursor.getString(0), cursor.getString(1), cursor.getString(2).split("\n\0"), cursor.getInt(3)==1);
+					String name = cursor.getString(0);
+					String namespace = cursor.getString(1);
+					boolean enable_ = cursor.getInt(3)==1;
+					int rights = cursor.getInt(4);
+					ScriptCriteria tmp = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
+					ScriptCriteria stored = scriptStore.registryMap.get(tmp);
+					if (stored == null) {
+						scriptStore.registryMap.put(tmp, tmp);
+						tmp.runtimeId = scriptStore.registry.size();
+						tmp.secret = ""; // todo generate secret key to separate and secure script environs.
+						scriptStore.registry.add(tmp);
+					} else {
+						stored.rights = tmp.rights;
+						stored.setEnabled(tmp.isEnabled());
+						tmp = stored;
+					}
+					if(BuildConfig.DEBUG)  ret[cc++] = tmp;
 				}
 				cursor.close();
-				CMN.debug("get all patterns::", ret.length);
-				CMN.debug(ret);
+				if(BuildConfig.DEBUG) {
+					CMN.debug("get all patterns::", ret.length);
+					CMN.debug(ret);
+				}
 				return ret;
 			}
 			
+			// not used
 			Map<ScriptId, String[]> matches = selectPatterns(TBL_MATCH, selectionIdStr, selectionIdArgsArr);
 			
 			Cursor cursor = db.query(TBL_SCRIPT, COLS_ID, selectionStr, selectionArgsArr
@@ -642,7 +697,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				
 				String[] matchArr = matches.get(id);
 				
-				scriptCriteriaArr[i] = new ScriptCriteria(name, namespace, matchArr, bEnable); // todo check is enabled?
+				scriptCriteriaArr[i] = new ScriptCriteria(name, namespace, matchArr, bEnable, 0); // todo check is enabled?
 				
 				i++;
 			}
@@ -779,8 +834,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		 * 
 		 * @param script
 		 *            the script to insert
+		 * @return -1 if fail
 		 */
-		public void insertScript(Script script, long rowId) {
+		public int insertScript(Script script, long rowId) {
 			final ContentValues fieldsId = new ContentValues();
 			fieldsId.put(COL_NAME, script.getName());
 			fieldsId.put(COL_NAMESPACE, script.getNamespace());
@@ -801,21 +857,25 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			ScriptRequire[] requires = script.getRequires();
 			if (requires != null) {
 				for (ScriptRequire require : requires) {
-					ContentValues fieldsRequire = new ContentValues(fieldsId);
-					fieldsRequire.put(COL_DOWNLOADURL, require.getUrl());
-					fieldsRequire.put(COL_CONTENT, require.getContent());
-					fieldsRequires.add(fieldsRequire);
+					if (require.getContent() != null) {
+						ContentValues fieldsRequire = new ContentValues(fieldsId);
+						fieldsRequire.put(COL_DOWNLOADURL, require.getUrl());
+						fieldsRequire.put(COL_CONTENT, require.getContent());
+						fieldsRequires.add(fieldsRequire);
+					}
 				}
 			}
 			List<ContentValues> fieldsResources = new ArrayList<ContentValues>();
 			ScriptResource[] resources = script.getResources();
 			if (resources != null) {
 				for (ScriptResource resource : resources) {
-					ContentValues fieldsResource = new ContentValues(fieldsId);
-					fieldsResource.put(COL_RESOURCENAME, resource.getName());
-					fieldsResource.put(COL_DOWNLOADURL, resource.getUrl());
-					fieldsResource.put(COL_DATA, resource.getData());
-					fieldsResources.add(fieldsResource);
+					if (resource.getData() != null) {
+						ContentValues fieldsResource = new ContentValues(fieldsId);
+						fieldsResource.put(COL_RESOURCENAME, resource.getName());
+						fieldsResource.put(COL_DOWNLOADURL, resource.getUrl());
+						fieldsResource.put(COL_DATA, resource.getData());
+						fieldsResources.add(fieldsResource);
+					}
 				}
 			}
 			ContentValues fieldsScript = new ContentValues(fieldsId);
@@ -824,11 +884,12 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			fieldsScript.put(COL_UPDATEURL, script.getUpdateurl());
 			fieldsScript.put(COL_INSTALLURL, script.getInstallurl());
 			fieldsScript.put(COL_ICON, script.getIcon());
-			fieldsScript.put(COL_RUNAT, script.getRunAt());
-			fieldsScript.put(COL_UNWRAP, script.isUnwrap());
+			fieldsScript.put(COL_RUNAT, script.hasRightToRun());
+			fieldsScript.put(COL_UNWRAP, script.hasRightUnwrap());
 			fieldsScript.put(COL_VERSION, script.getVersion());
 			fieldsScript.put(COL_CONTENT, script.getContent());
 			fieldsScript.put(COL_ENABLED, script.isEnabled());
+			fieldsScript.put(COL_RIGHTS, script.rights);
 			//fieldsScript.put("time", System.currentTimeMillis());
 			db.beginTransaction();
 			try {
@@ -837,15 +898,16 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						Log.e(TAG,
 								"Error inserting new script into the database (table "
 										+ TBL_SCRIPT + ")");
-						return;
+						return -1;
 					}
+					// todo 编辑脚本后，需要删除不再依赖的resource、require
 				} else {
 					//fieldsScript.put("create", System.currentTimeMillis());
 					if (db.insert(TBL_SCRIPT, null, fieldsScript) == -1) {
 						Log.e(TAG,
 								"Error inserting new script into the database (table "
 										+ TBL_SCRIPT + ")");
-						return;
+						return -1;
 					}
 				}
 				
@@ -854,7 +916,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						Log.e(TAG,
 								"Error inserting new script into the database (table "
 										+ TBL_MATCH + ")");
-						return;
+						return -2;
 					}
 				} else {
 					db.delete(TBL_MATCH, COL_NAME + " = ? AND " + COL_NAMESPACE
@@ -865,7 +927,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						Log.e(TAG,
 								"Error inserting new script into the database (table "
 										+ TBL_REQUIRE + ")");
-						return;
+						return -2;
 					}
 				}
 				for (ContentValues fieldsResource : fieldsResources) {
@@ -873,13 +935,14 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						Log.e(TAG,
 								"Error inserting new script into the database (table "
 										+ TBL_RESOURCE + ")");
-						return;
+						return -2;
 					}
 				}
 				db.setTransactionSuccessful();
 			} finally {
-				db.endTransaction();
+				db.endTransaction(); // todo check
 			}
+			return 0;
 		}
 
 		/**
@@ -1043,20 +1106,15 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	 * available and enabled user script matching criteria.
 	 */
 	private static class ScriptCache {
-
-		private static final int CACHE_SIZE = 62;
-
-		private LinkedHashMap<String, Script[]> urlScripts = new LinkedHashMap<String, Script[]>(
+		private static final int CACHE_SIZE = 1024;
+		private LinkedHashMap<String, ScriptCriteria[]> urlScripts = new LinkedHashMap<String, ScriptCriteria[]>(
 				CACHE_SIZE + 2, 1.0f, true) {
-
 			private static final long serialVersionUID = 1L;
-
 			// @Override
 			protected boolean removeEldestEntry(
-					Entry<String, Script[]> eldest) {
+					Entry<String, ScriptCriteria[]> eldest) {
 				return size() > CACHE_SIZE;
 			}
-
 		};
 
 		private ScriptCriteria[] scriptCriteriaArr;
@@ -1069,7 +1127,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		 * @return if the URL is cached either the found user scripts or an
 		 *         empty array; if the URL is not cached then null
 		 */
-		public synchronized Script[] get(String url) {
+		public synchronized ScriptCriteria[] get(String url) {
 			return urlScripts.get(url);
 		}
 
@@ -1081,7 +1139,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		 * @param scripts
 		 *            the user scripts to execute at that URL
 		 */
-		public synchronized void put(String url, Script[] scripts) {
+		public synchronized void put(String url, ScriptCriteria[] scripts) {
 			urlScripts.put(url, scripts);
 		}
 
@@ -1110,7 +1168,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		/**
 		 * Caches the array of user script criteria to be used when matching
 		 * URLs.
-		 * 
+		 *
 		 * @param scriptCriteriaArr
 		 *            the array to cache
 		 */

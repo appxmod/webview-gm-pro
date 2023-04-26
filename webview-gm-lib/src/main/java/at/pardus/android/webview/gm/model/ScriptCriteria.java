@@ -18,6 +18,10 @@ package at.pardus.android.webview.gm.model;
 
 import android.text.TextUtils;
 
+import org.knziha.metaline.Metaline;
+
+import java.util.Objects;
+
 import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.util.CriterionMatcher;
 
@@ -28,6 +32,10 @@ import at.pardus.android.webview.gm.util.CriterionMatcher;
  */
 public class ScriptCriteria extends ScriptId {
 	private String[] match;
+	protected boolean enabled;
+	public int rights;
+	public String secret;
+	public int runtimeId;
 
 	public ScriptCriteria(String name, String namespace, String[] match) {
 		super(name, namespace);
@@ -35,10 +43,11 @@ public class ScriptCriteria extends ScriptId {
 		this.enabled = true;
 	}
 	
-	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable) {
+	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable, int rights) {
 		super(name, namespace);
 		this.match = match;
 		this.enabled = bEnable;
+		this.rights = rights;
 	}
 
 	/**
@@ -82,4 +91,60 @@ public class ScriptCriteria extends ScriptId {
 	public boolean isEnabled() {
 		return enabled;
 	}
+	
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+	
+	@Override
+	public String toString() {
+		return (enabled?"":"//")+name + ", " + namespace;
+	}
+	
+	static int Z = 0;
+	@Metaline(flagPos=7) public void hasRightGetValue(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=7) public boolean hasRightGetValue(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=8) public void hasRightSetValue(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=8) public boolean hasRightSetValue(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=9) public void hasRightOpenInTab(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=9) public boolean hasRightOpenInTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=10) public void hasRightRegisterMenuCommand(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=10) public boolean hasRightRegisterMenuCommand(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=11) public void hasRightDeleteValue(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=11) public boolean hasRightDeleteValue(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=12) public void hasRightListValues(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=12) public boolean hasRightListValues(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=13) public void hasRightAddStyle(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=13) public boolean hasRightAddStyle(){ rights|=Z; throw new RuntimeException(); }
+//	@Metaline(flagPos=14) public void hasRightOpenInTab(boolean val){ rights|=Z; throw new RuntimeException(); }
+//	@Metaline(flagPos=14) public boolean hasRightOpenInTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=15) public void hasRightInfo(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=15) public boolean hasRightInfo(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=16) public void hasRightNotification(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=16) public boolean hasRightNotification(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=17) public void hasRightUnregisterMenuCommand(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=17) public boolean hasRightUnregisterMenuCommand(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=18) public void hasRightSetClipboard(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=18) public boolean hasRightSetClipboard(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=19) public void hasRightAddValueChangeListener(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=19) public boolean hasRightAddValueChangeListener(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=20) public void hasRightRemoveValueChangeListener(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=20) public boolean hasRightRemoveValueChangeListener(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=21) public void hasRightGetResourceText(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=21) public boolean hasRightGetResourceText(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=22) public void hasRightGetResourceURL(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=22) public boolean hasRightGetResourceURL(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=23) public void hasRightAddElement(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=23) public boolean hasRightAddElement(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=24) public void hasRightXmlHttpRequest(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=24) public boolean hasRightXmlHttpRequest(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=25) public void hasRightDownload(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=25) public boolean hasRightDownload(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=26) public void hasRightRunStart(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=26) public boolean hasRightRunStart(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=27) public void hasRightRunEnd(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=27) public boolean hasRightRunEnd(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=26, flagSize=2) public int hasRightToRun(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=28) public void hasRightUnwrap(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=28) public boolean hasRightUnwrap(){ rights|=Z; throw new RuntimeException(); }
 }

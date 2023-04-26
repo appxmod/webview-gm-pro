@@ -27,6 +27,8 @@ import org.knziha.metaline.Metaline;
 import java.util.UUID;
 
 import at.pardus.android.webview.gm.model.Script;
+import at.pardus.android.webview.gm.model.ScriptCriteria;
+import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptRequire;
 import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
@@ -214,7 +216,7 @@ public class WebViewClientGm extends WebViewClient {
 			Log.w(TAG, "Property ScriptStoreSQLite is null - not running any scripts");
 			return;
 		}
-		Script[] matchingScripts = ScriptStoreSQLite.get(url, true, false);
+		ScriptCriteria[] matchingScripts = ScriptStoreSQLite.get(url, true, false);
 		//CMN.debug("matchingScripts::", matchingScripts);
 		CMN.debug(matchingScripts);
 		if (matchingScripts == null) {
@@ -226,16 +228,14 @@ public class WebViewClientGm extends WebViewClient {
 		if (jsAfterScript == null) {
 			jsAfterScript = "";
 		}
-		for (Script script : matchingScripts) {
-			if ((!pageFinished && Script.RUNATSTART.equals(script.getRunAt()))
-					|| (pageFinished && (script.getRunAt() == null || Script.RUNATEND
-							.equals(script.getRunAt())))) {
+		for (ScriptCriteria script : matchingScripts) {
+			if (!pageFinished && script.hasRightRunStart() || pageFinished && script.hasRightRunEnd()) {
 				Log.i(TAG, "Running script \"" + script + "\" on " + url);
 				
 				buffer.setLength(0);
 				buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
 				
-				boolean unwrap = script.isUnwrap();
+				boolean unwrap = script.hasRightUnwrap();
 				boolean bigcake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
 				if (!bigcake) {
 					buffer.append("javascript:\n");
