@@ -1182,7 +1182,8 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		}
 		
 		public boolean scriptHasRequire(ScriptId scriptId, String required, boolean js) {
-			Cursor cursor = db.rawQuery("select rowid from " + (js ? TBL_REQUIRE : TBL_RESOURCE) + " where name=? and namespace=? and " + (js ? COL_DOWNLOADURL : COL_RESOURCENAME) + "=? limit 1", new String[]{scriptId.getName(), scriptId.getNamespace()});
+			Cursor cursor = db.rawQuery("select rowid from " + (js ? TBL_REQUIRE : TBL_RESOURCE) + " where name=? and namespace=? and " + (js ? COL_DOWNLOADURL : COL_RESOURCENAME) + "=? limit 1"
+					, new String[]{scriptId.getName(), scriptId.getNamespace(), required});
 			boolean ret = cursor.getCount() > 0;
 			cursor.close();
 			return ret;

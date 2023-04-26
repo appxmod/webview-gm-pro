@@ -21,6 +21,7 @@ import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * Object containing one @resource Metadata entry.
@@ -96,5 +97,18 @@ public class ScriptResource {
 		} catch (UnsupportedEncodingException e) {
 			return "";
 		}
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ScriptResource that = (ScriptResource) o;
+		return Objects.equals(name, that.name) && Objects.equals(url, that.url);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(name, url);
 	}
 }

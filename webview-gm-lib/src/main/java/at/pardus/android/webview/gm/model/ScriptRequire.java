@@ -16,6 +16,8 @@
 
 package at.pardus.android.webview.gm.model;
 
+import java.util.Objects;
+
 /**
  * Object containing one @require Metadata entry.
  *
@@ -41,5 +43,18 @@ public class ScriptRequire {
 	
 	public void setContent(String content) {
 		this.content = content;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ScriptRequire that = (ScriptRequire) o;
+		return Objects.equals(url, that.url);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(url);
 	}
 }

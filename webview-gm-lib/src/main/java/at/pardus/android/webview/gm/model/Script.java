@@ -17,6 +17,7 @@
 package at.pardus.android.webview.gm.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -93,8 +94,8 @@ public class Script extends ScriptMetadata {
 			updateurl = downloadurl;
 		}
 		ArrayList<String> match = new ArrayList<>();
-		Set<ScriptRequire> requires = new HashSet<ScriptRequire>();
-		Set<ScriptResource> resources = new HashSet<ScriptResource>();
+		ArrayList<ScriptRequire> requires = new ArrayList<>();
+		ArrayList<ScriptResource> resources = new ArrayList<>();
 
 		Pattern pattern = Pattern.compile("// @(\\S+)(?:\\s+(.*))?");
 		Scanner scanner = new Scanner(scriptStr);
@@ -215,19 +216,15 @@ public class Script extends ScriptMetadata {
 					}
 					else if (propertyName.equals("require")) {
 						tmp.hasRightRequire(true);
-						//if(true) continue;
 						String required = DownloadHelper.resolveURL(propertyValue, url);
 						ScriptRequire require = new ScriptRequire(required, null);
-						if (name!=null && namespace!=null) {
-							if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), required)) {
-								require.setContent(DownloadHelper.downloadScript(required));
-							}
+						if (!requires.contains(require)) {
+							requires.add(require);
 						}
-						requires.add(require);
 					}
 					else if (propertyName.equals("resource")) {
 						tmp.hasRightResource(true);
-						//if(true) continue;
+						if(resources.size()>0) continue;
 						Pattern resourcePattern = Pattern.compile("(\\S+)\\s+(.*)");
 						Matcher resourceMatcher = resourcePattern.matcher(propertyValue);
 						if (!resourceMatcher.matches()) {
@@ -236,12 +233,9 @@ public class Script extends ScriptMetadata {
 						}
 						String required = resourceMatcher.group(1);
 						ScriptResource resource = new ScriptResource(required, DownloadHelper.resolveURL(resourceMatcher.group(2), url), null);
-						if (name!=null && namespace!=null) {
-							if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), required)) {
-								resource.setData(DownloadHelper.downloadBytes(resource.getUrl()));
-							}
+						if (!resources.contains(resource)) {
+							resources.add(resource);
 						}
-						resources.add(resource);
 					} else if (propertyName.equals("exclude")) {
 						match.add("!");
 						match.add(propertyValue);
@@ -269,11 +263,23 @@ public class Script extends ScriptMetadata {
 		ScriptRequire[] requireArr = null;
 		ScriptResource[] resourceArr = null;
 		if (requires.size() > 0) {
+			for (ScriptRequire req:requires) {
+				if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), req.getUrl())) {
+					//CMN.debug("下载::", req);
+					req.setContent(DownloadHelper.downloadScript(req.getUrl()));
+				}
+			}
 			requireArr = requires.toArray(new ScriptRequire[requires.size()]);
 		}
 		if (resources.size() > 0) {
-			resourceArr = resources
-					.toArray(new ScriptResource[resources.size()]);
+			for (ScriptResource res:resources) {
+				if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName())) {
+					//CMN.debug("下载::", res.getName(), res.getUrl());
+					res.setData(DownloadHelper.downloadBytes(res.getUrl()));
+				}
+				//CMN.debug("scriptStore.scriptHasResource::", scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName()));
+			}
+			resourceArr = resources.toArray(new ScriptResource[resources.size()]);
 		}
 		if (match.size() > 0) {
 			matchArr = match.toArray(new String[match.size()]);
@@ -281,7 +287,7 @@ public class Script extends ScriptMetadata {
 		if (tmp.hasRightToRun()==0) {
 			tmp.hasRightRunEnd(true);
 		}
-		CMN.debug("tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest());
+		CMN.debug("parsed tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest(), Arrays.toString(requireArr));
 		return new Script(name, namespace, matchArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
 				unwrap, version, requireArr, resourceArr, true, tmp.rights, scriptStr);
