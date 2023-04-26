@@ -56,11 +56,11 @@ public class WebViewClientGm extends WebViewClient {
 	window.wrappedJSObject = unsafeWindow;
 	var GM_wv={};
 	function GM_listValues() {
-		return GM_wv.bg.listValues(GM_wv.n, GM_wv.ns, GM_wv.sec).split(",");
+		return GM_wv.bg.listValues(GM_wv.id, GM_wv.sec).split(",");
 	}
 	function GM_getValue(name, v) {
 		//console.log('GM_getValue', name, v);
-		var ret =  GM_wv.bg.getValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name);
+		var ret =  GM_wv.bg.getValue(GM_wv.id, GM_wv.sec, name);
 		if(ret==undefined) ret=v;
 		if(ret!=undefined && ret!=null) ret=JSON.parse(ret);
 		//console.log('get=', ret);
@@ -70,10 +70,10 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_setValue(name, value) {
 		//console.log('GM_setValue', name, value);
 		//console.log(new Error());
-		GM_wv.bg.setValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name, JSON.stringify(value));
+		GM_wv.bg.setValue(GM_wv.id, GM_wv.sec, name, JSON.stringify(value));
 	}
 	function GM_deleteValue(name) {
-		GM_wv.bg.deleteValue(GM_wv.n, GM_wv.ns, GM_wv.sec, name);
+		GM_wv.bg.deleteValue(GM_wv.id, GM_wv.sec, name);
 	}
 	function GM_addStyle(css) {
 		var style = document.createElement("style");
@@ -82,13 +82,13 @@ public class WebViewClientGm extends WebViewClient {
 		document.getElementsByTagName('head')[0].appendChild(style);
 	}
 	function GM_log(message) {
-		GM_wv.bg.log(GM_wv.n, GM_wv.ns, GM_wv.sec, message);
+		GM_wv.bg.log(GM_wv.id, GM_wv.sec, message);
 	}
 	function GM_getResourceURL(resourceName) {
-		return GM_wv.bg.getResourceURL(GM_wv.n, GM_wv.ns, GM_wv.sec, resourceName);
+		return GM_wv.bg.getResourceURL(GM_wv.id, GM_wv.sec, resourceName);
 	}
 	function GM_getResourceText(resourceName) {
-		return GM_wv.bg.getResourceText(GM_wv.n, GM_wv.ns, GM_wv.sec, resourceName);
+		return GM_wv.bg.getResourceText(GM_wv.id, GM_wv.sec, resourceName);
 	}
 	function GM_xmlhttpRequest(details) {
 		var sig = '_' + Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
@@ -121,7 +121,7 @@ public class WebViewClientGm extends WebViewClient {
 			hook('onload', 'GM_uploadOnLoadCallback');
 			hook('onprogress', 'GM_uploadOnProgressCallback');
 		}
-		return JSON.parse(GM_wv.bg.xmlHttpRequest(GM_wv.n, GM_wv.ns, GM_wv.sec, JSON.stringify(details)));
+		return JSON.parse(GM_wv.bg.xmlHttpRequest(GM_wv.id, GM_wv.sec, JSON.stringify(details)));
 	}
 	function nonimpl(n) {
 		GM_log(n+" is not yet implemented");
@@ -260,7 +260,8 @@ public class WebViewClientGm extends WebViewClient {
 					buffer.append("GM_wv.n=\"").append(key.getName().replace("\"", "\\\"")).append("\"");
 					buffer.append(";GM_wv.ns=\"").append(key.getNamespace().replace("\"", "\\\"")).append("\"");
 					buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
-					buffer.append(";GM_wv.sec=\"").append(secret).append("\"");
+					buffer.append(";GM_wv.id=\"").append(script.runtimeId).append("\"");
+					buffer.append(";GM_wv.sec=\"").append(script.secret).append("\"");
 					buffer.append(";GM_wv.bg=").append(jsBridgeName);
 					buffer.append(";GM_wv.hash=\"").append(("GM_"
 							+ key.getName()

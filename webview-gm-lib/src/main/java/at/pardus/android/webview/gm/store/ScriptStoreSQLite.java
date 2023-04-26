@@ -18,7 +18,6 @@ package at.pardus.android.webview.gm.store;
 
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -34,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import at.pardus.android.webview.gm.BuildConfig;
 import at.pardus.android.webview.gm.model.Script;
@@ -313,9 +313,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		}
 	}
 	
-	private void doInvalidateCache(ScriptId script, boolean delete) {
+	private void doInvalidateCache(ScriptId key, boolean delete) {
 		cache.urlScripts.clear();
-		ScriptCriteria stored = registryMap.get(script);
+		ScriptCriteria stored = registryMap.get(key);
 		if (delete) {
 			if (stored != null) {
 				registryMap.remove(stored);
@@ -324,16 +324,38 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		} else {
 			ScriptCriteria tmp = dbHelper.getScriptCriteria(stored);
 			if (stored == null) {
-				registryMap.put(tmp, tmp);
-				tmp.runtimeId = registry.size();
-				tmp.secret = ""; // todo generate secret key to separate and secure script environs.
-				registry.add(tmp);
+				registerScript(tmp);
 			} else { // 更新
+				stored.setMatch(tmp.getMatch());
 				stored.rights = tmp.rights;
 				stored.setEnabled(tmp.isEnabled());
 				tmp = stored;
 			}
 		}
+	}
+	
+	// inline
+	private void registerScript(ScriptCriteria key) {
+		registryMap.put(key, key);
+		key.runtimeId = registry.size();
+		key.secret = UUID.randomUUID().toString();
+		CMN.debug("secret::", key.secret, key);
+		registry.add(key);
+	}
+	
+	public ScriptCriteria getRunningScript(String runtimeId) {
+		ScriptCriteria ret;
+		try {
+			int id = Integer.parseInt(runtimeId);
+			ret = registry.get(id);
+		} catch (Exception e) {
+			CMN.debug(e);
+			ret = ScriptCriteria.EmptyInstance;
+		}
+		if (!ret.isEnabled()) {
+			return null;
+		}
+		return ret;
 	}
 	
 	/**
@@ -343,6 +365,13 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	private void initCache() {
 		cache = new ScriptCache();
 		cache.setScriptCriteriaArr(dbHelper.selectScriptCriteria(null, null));
+	}
+	
+	public ScriptResource getResources(ScriptCriteria script, String resourceName) {
+		if (dbHelper == null) {
+			return null;
+		}
+		return dbHelper.getResource(script, resourceName);
 	}
 	
 	/**
@@ -486,6 +515,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				COL_NAMESPACE, COL_DOWNLOADURL, COL_CONTENT };
 		private static final String[] COLS_RESOURCE = new String[] { COL_NAME,
 				COL_NAMESPACE, COL_DOWNLOADURL, COL_RESOURCENAME, COL_DATA };
+		private static final String[] COLS_RESOURCE_DATA = new String[] { COL_DATA };
 		private static final String[] COLS_SCRIPT = new String[] { COL_NAME
 				, COL_NAMESPACE, COL_DESCRIPTION, COL_DOWNLOADURL, COL_UPDATEURL
 				, COL_INSTALLURL, COL_ICON/*, COL_RUNAT*//*, COL_UNWRAP*/, COL_VERSION
@@ -535,10 +565,26 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					db.execSQL(TBL_MATCH_CREATE);
 				}
 				if (v == DB_SCHEMA_VERSION_4) {
-					db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
-					db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
+					if(!columnExists(db, TBL_SCRIPT, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
+					if(!columnExists(db, TBL_MATCH, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
 				}
 			}
+		}
+		
+		private static boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
+			String query;
+			try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null)) {
+				while (cursor.moveToNext()) {
+					query = cursor.getString(cursor.getColumnIndex("name"));
+					CMN.Log("columnExists::", query);
+					if (columnName.equals(query)) {
+						return true;
+					}
+				}
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
+			return false;
 		}
 
 		/**
@@ -712,10 +758,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					ScriptCriteria tmp = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
 					ScriptCriteria stored = init?null:scriptStore.registryMap.get(tmp);
 					if (stored == null) {
-						scriptStore.registryMap.put(tmp, tmp);
-						tmp.runtimeId = scriptStore.registry.size();
-						tmp.secret = ""; // todo generate secret key to separate and secure script environs.
-						scriptStore.registry.add(tmp);
+						scriptStore.registerScript(tmp);
 					} else {
 						stored.rights = tmp.rights;
 						stored.setEnabled(tmp.isEnabled());
@@ -1144,6 +1187,19 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		public boolean scriptHasRequire(ScriptId scriptId, String required, boolean js) {
 			Cursor cursor = db.rawQuery("select rowid from " + (js ? TBL_REQUIRE : TBL_RESOURCE) + " where name=? and namespace=? and " + (js ? COL_DOWNLOADURL : COL_RESOURCENAME) + "=? limit 1", new String[]{scriptId.getName(), scriptId.getNamespace()});
 			boolean ret = cursor.getCount() > 0;
+			cursor.close();
+			return ret;
+		}
+		
+		ScriptResource getResource(ScriptId scriptId, String resourceName) {
+			ScriptResource ret = null;
+			Cursor cursor = db.query(TBL_RESOURCE, COLS_RESOURCE_DATA, "name=? and namespace=? and valuename=? limit 1"
+					, new String[]{scriptId.getName(), scriptId.getName(), resourceName}
+					, null, null, null);
+			if (cursor.moveToNext()) {
+				ret = new ScriptResource(resourceName, null, cursor.getBlob(cursor
+								.getColumnIndex(COL_DATA)));
+			}
 			cursor.close();
 			return ret;
 		}

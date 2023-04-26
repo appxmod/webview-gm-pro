@@ -39,7 +39,7 @@ public class Script extends ScriptMetadata {
 			String downloadurl, String updateurl, String installurl,
 			String icon, String runAt, boolean unwrap, String version,
 			ScriptRequire[] requires, ScriptResource[] resources
-			, boolean bEnable, int rights, String content) {
+			, boolean bEnable, long rights, String content) {
 		super(name, namespace, match, description,
 				downloadurl, updateurl, installurl, icon, runAt, unwrap,
 				version, requires, resources, bEnable);
@@ -126,7 +126,7 @@ public class Script extends ScriptMetadata {
 						name = propertyValue;
 					} else if (propertyName.equals("namespace")) {
 						namespace = propertyValue;
-					} else if (propertyName.equals("description")) {
+					} else if (propertyName.equals("description")) { // todo parse localized name and description
 						description = propertyValue;
 					} else if (propertyName.equals("downloadURL")) {
 						downloadurl = propertyValue;
@@ -145,7 +145,7 @@ public class Script extends ScriptMetadata {
 						}
 					}
 					else if (propertyName.equals("grant")) {
-						switch (propertyName) {
+						switch (propertyValue) {
 							case "GM_getValue":
 								tmp.hasRightGetValue(true);
 							break;
@@ -200,12 +200,16 @@ public class Script extends ScriptMetadata {
 							case "GM_download":
 								tmp.hasRightDownload(true);
 							break;
+							case "GM_log":
+								tmp.hasRightLog(true);
+							break;
 						}
 					}
 					else if (propertyName.equals("version")) {
 						version = propertyValue;
 					}
 					else if (propertyName.equals("require")) {
+						tmp.hasRightRequire(true);
 						//if(true) continue;
 						String required = DownloadHelper.resolveURL(propertyValue, url);
 						ScriptRequire require = new ScriptRequire(required, null);
@@ -217,6 +221,7 @@ public class Script extends ScriptMetadata {
 						requires.add(require);
 					}
 					else if (propertyName.equals("resource")) {
+						tmp.hasRightResource(true);
 						//if(true) continue;
 						Pattern resourcePattern = Pattern.compile("(\\S+)\\s+(.*)");
 						Matcher resourceMatcher = resourcePattern.matcher(propertyValue);

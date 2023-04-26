@@ -21,8 +21,10 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 import at.pardus.android.webview.gm.model.Script;
+import at.pardus.android.webview.gm.model.ScriptCriteria;
 import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptResource;
 import at.pardus.android.webview.gm.store.CMN;
@@ -40,7 +42,7 @@ public class WebViewGmApi {
 
 	private ScriptStoreSQLite ScriptStoreSQLite;
 
-	private String secret;
+	//private String secret;
 
 	/**
 	 * Constructor.
@@ -53,7 +55,7 @@ public class WebViewGmApi {
 	public WebViewGmApi(WebView view, ScriptStoreSQLite ScriptStoreSQLite, String secret) {
 		this.view = view;
 		this.ScriptStoreSQLite = ScriptStoreSQLite;
-		this.secret = secret;
+		//this.secret = secret;
 	}
 
 	/**
@@ -70,24 +72,26 @@ public class WebViewGmApi {
 	 * @see <a href="http://wiki.greasespot.net/GM_listValues">GM_listValues</a>
 	 */
     @JavascriptInterface
-	public String listValues(String scriptName, String scriptNamespace,
-			String secret) {
-		if (!this.secret.equals(secret)) {
+	public String listValues(String runtimeId, String secret) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"listValues\" did not supply correct secret");
 			return null;
 		}
-		String[] values = ScriptStoreSQLite.getValueNames(new ScriptId(scriptName,
-				scriptNamespace));
-		if (values == null || values.length == 0) {
-			return "";
+		if (script.hasRightListValues()) {
+			String[] values = ScriptStoreSQLite.getValueNames(script);
+			if (values == null || values.length == 0) {
+				return "";
+			}
+			StringBuilder sb = new StringBuilder();
+			for (String v : values) {
+				sb.append(",");
+				sb.append(v);
+			}
+			sb.deleteCharAt(0);
+			return sb.toString();
 		}
-		StringBuilder sb = new StringBuilder();
-		for (String v : values) {
-			sb.append(",");
-			sb.append(v);
-		}
-		sb.deleteCharAt(0);
-		return sb.toString();
+		return null;
 	}
 
 	/**
@@ -107,15 +111,18 @@ public class WebViewGmApi {
 	 * @see <a href="http://wiki.greasespot.net/GM_getValue">GM_getValue</a>
 	 */
     @JavascriptInterface
-	public String getValue(String scriptName, String scriptNamespace, String secret, String name) {
-		if (!this.secret.equals(secret)) {
+	public String getValue(String runtimeId, String secret, String name) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"getValue\" did not supply correct secret");
 			return null;
 		}
-		String v = ScriptStoreSQLite.getValue(new ScriptId(scriptName,
-				scriptNamespace), name);
-		//CMN.debug("getValue::", name, v);
-		return v;
+		if (script.hasRightGetValue()) {
+			String v = ScriptStoreSQLite.getValue(script, name);
+			//CMN.debug("getValue::", name, v);
+			return v;
+		}
+		return null;
 	}
 
 	/**
@@ -134,14 +141,16 @@ public class WebViewGmApi {
 	 * @see <a href="http://wiki.greasespot.net/GM_setValue">GM_setValue</a>
 	 */
     @JavascriptInterface
-	public void setValue(String scriptName, String scriptNamespace,
-			String secret, String name, String value) {
-		if (!this.secret.equals(secret)) {
+	public void setValue(String runtimeId, String secret, String name, String value) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"setValue\" did not supply correct secret");
 			return;
 		}
-		//CMN.debug("setValue::", name, value==null?-1:value.length(), value);
-		ScriptStoreSQLite.setValue(new ScriptId(scriptName, scriptNamespace), name, value);
+		if (script.hasRightSetValue()) {
+			//CMN.debug("setValue::", name, value==null?-1:value.length(), value);
+			ScriptStoreSQLite.setValue(script, name, value);
+		}
 	}
 
 	/**
@@ -158,14 +167,15 @@ public class WebViewGmApi {
 	 * @see <tt><a href="http://wiki.greasespot.net/GM_deleteValue">GM_deleteValue</a></tt>
 	 */
     @JavascriptInterface
-	public void deleteValue(String scriptName, String scriptNamespace,
-			String secret, String name) {
-		if (!this.secret.equals(secret)) {
+	public void deleteValue(String runtimeId, String secret, String name) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"deleteValue\" did not supply correct secret");
 			return;
 		}
-		ScriptStoreSQLite
-				.deleteValue(new ScriptId(scriptName, scriptNamespace), name);
+		if (script.hasRightDeleteValue()) {
+			ScriptStoreSQLite.deleteValue(script, name);
+		}
 	}
 
 	/**
@@ -182,13 +192,15 @@ public class WebViewGmApi {
 	 * @see <tt><a href="http://wiki.greasespot.net/GM_log">GM_log</a></tt>
 	 */
     @JavascriptInterface
-	public void log(String scriptName, String scriptNamespace, String secret,
-			String message) {
-		if (!this.secret.equals(secret)) {
+	public void log(String runtimeId, String secret, String message) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"log\" did not supply correct secret");
 			return;
 		}
-		Log.i(TAG, scriptName + ", " + scriptNamespace + ": " + message);
+		if (script.hasRightLog()) {
+			Log.i("webview-gm", script.getName() + ", " + script.getNamespace() + ": " + message);
+		}
 	}
 
 	/**
@@ -205,31 +217,25 @@ public class WebViewGmApi {
 	 * @see <tt><a href="http://wiki.greasespot.net/GM_getResourceURL">GM_getResourceURL</a></tt>
 	 */
     @JavascriptInterface
-	public String getResourceURL(String scriptName, String scriptNamespace,
-			String secret, String resourceName) {
+	public String getResourceURL(String runtimeId, String secret, String resourceName) {
 		CMN.debug("getResourceURL::", resourceName);
-		if (!this.secret.equals(secret)) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"getResourceURL\" did not supply correct secret");
 			return "";
 		}
-
-		Script script = ScriptStoreSQLite.get(new ScriptId(scriptName,
-				scriptNamespace));
-
-		for (ScriptResource resource : script.getResources()) {
-			Log.i(TAG, "Resource: " + resource.getName() + " want: "
-					+ resourceName + " uri: " + resource.getJavascriptUrl());
-			if (!resource.getName().equals(resourceName)) {
-				continue;
+		if (script.hasRightResource()) {
+			try {
+				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
+				if (resource != null) {
+					return resource.getJavascriptUrl(); // todo safety
+				}
+				Log.e(TAG, "Requested resource: " + resourceName + " not found!");
+			} catch (Exception e) {
+				CMN.debug(e);
 			}
-
-			return resource.getJavascriptUrl(); // todo safety
 		}
-
-		Log.e(TAG, "Requested resource: " + resourceName + " not found! ("
-				+ script.getResources().length + ")");
-
 		return "";
 	}
 
@@ -248,25 +254,23 @@ public class WebViewGmApi {
 	 * @see <tt><a href="http://wiki.greasespot.net/GM_getResourceText">GM_getResourceText</a></tt>
 	 */
     @JavascriptInterface
-	public String getResourceText(String scriptName, String scriptNamespace,
-			String secret, String resourceName) {
-		if (!this.secret.equals(secret)) {
+	public String getResourceText(String runtimeId, String secret, String resourceName) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"getResourceText\" did not supply correct secret");
 			return "";
 		}
-
-		Script script = ScriptStoreSQLite.get(new ScriptId(scriptName,
-				scriptNamespace));
-
-		for (ScriptResource resource : script.getResources()) {
-			if (!resource.getName().equals(resourceName)) {
-				continue;
+		if (script.hasRightResource()) {
+			try {
+				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
+				if (resource != null) {
+					return resource.getJavascriptString();
+				}
+			} catch (Exception e) {
+				CMN.debug(e);
 			}
-
-			return resource.getJavascriptString();
 		}
-
 		return "";
 	}
 
@@ -284,22 +288,22 @@ public class WebViewGmApi {
 	 * @see <tt><a href="http://wiki.greasespot.net/GM_xmlhttpRequest">GM_xmlhttpRequest</a></tt>
 	 */
     @JavascriptInterface
-	public String xmlHttpRequest(String scriptName, String scriptNamespace,
-			String secret, String jsonRequestString) {
-		if (!this.secret.equals(secret)) {
+	public String xmlHttpRequest(String runtimeId, String secret, String jsonRequestString) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
 			return "";
 		}
-
-		WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view,
-				jsonRequestString);
-		WebViewXmlHttpResponse response = request.execute();
-
-		if (response != null) {
-			return response.toJSONString();
+		if (script.hasRightXmlHttpRequest()) {
+			WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view,
+					jsonRequestString);
+			WebViewXmlHttpResponse response = request.execute();
+			
+			if (response != null) {
+				return response.toJSONString();
+			}
 		}
-
 		return "";
 	}
 }

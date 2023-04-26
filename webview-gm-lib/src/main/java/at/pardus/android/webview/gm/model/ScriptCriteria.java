@@ -33,9 +33,11 @@ import at.pardus.android.webview.gm.util.CriterionMatcher;
 public class ScriptCriteria extends ScriptId {
 	private String[] match;
 	protected boolean enabled;
-	public int rights;
+	public long rights;
 	public String secret;
 	public int runtimeId;
+	
+	public static ScriptCriteria EmptyInstance = new ScriptCriteria("","",null,false,0);
 
 	public ScriptCriteria(String name, String namespace, String[] match) {
 		super(name, namespace);
@@ -87,6 +89,9 @@ public class ScriptCriteria extends ScriptId {
 		return match;
 	}
 	
+	public void setMatch(String[] match) {
+		this.match = match;
+	}
 	
 	public boolean isEnabled() {
 		return enabled;
@@ -147,6 +152,12 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=26, flagSize=2) public int hasRightToRun(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=28) public void hasRightUnwrap(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=28) public boolean hasRightUnwrap(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=29) public void hasRightResource(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=29) public boolean hasRightResource(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=30) public void hasRightRequire(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=30) public boolean hasRightRequire(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=31) public void hasRightLog(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=31) public boolean hasRightLog(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;

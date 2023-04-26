@@ -74,7 +74,6 @@ public class ScriptResource {
 	public String getJavascriptUrl() {
 		String extension = MimeTypeMap.getFileExtensionFromUrl(this.url);
 		String mimeType;
-
 		// Fallback to "bytes" if we can't determine the actual mimetype.
 		if (extension == null || TextUtils.isEmpty(extension)) {
 			mimeType = "application/octet-stream";
@@ -82,7 +81,6 @@ public class ScriptResource {
 			MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
 			mimeType = mimeTypeMap.getMimeTypeFromExtension(extension);
 		}
-
 		return "data:" + mimeType + ";base64," + getDataBase64();
 	}
 
