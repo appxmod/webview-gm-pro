@@ -953,7 +953,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			}
 			List<ContentValues> fieldsRequires = new ArrayList<ContentValues>();
 			ScriptRequire[] requires = script.getRequires();
-			if (requires != null) {
+			if (requires != null && requires.length>0) {
 				for (ScriptRequire require : requires) {
 					if (require.getContent() != null) {
 						ContentValues fieldsRequire = new ContentValues(fieldsId);
@@ -965,7 +965,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			}
 			List<ContentValues> fieldsResources = new ArrayList<ContentValues>();
 			ScriptResource[] resources = script.getResources();
-			if (resources != null) {
+			if (resources != null && resources.length>0) {
 				for (ScriptResource resource : resources) {
 					if (resource.getData() != null) {
 						ContentValues fieldsResource = new ContentValues(fieldsId);
@@ -996,7 +996,45 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						Log.e(TAG, "Error inserting new script into the database (table " + TBL_SCRIPT + ")");
 						return -1;
 					}
-					// todo 编辑脚本后，需要删除不再依赖的resource、require
+					try { // 编辑脚本后，需要删除不再依赖的resource、require
+						String sqlDelete = "name=? and namespace=?";
+						String[] args = null;
+						ArrayList<String> tmpArr = new ArrayList<>();
+						tmpArr.clear(); tmpArr.add(script.getName()); tmpArr.add(script.getNamespace());
+						if (requires != null && requires.length > 0) {
+							sqlDelete += " and (";
+							boolean first = false;
+							for (ScriptRequire require : requires) {
+								if (first) sqlDelete += " and ";
+								else first = true;
+								sqlDelete += COL_DOWNLOADURL + "!=?";
+								tmpArr.add(require.getUrl());
+							}
+							sqlDelete += ")";
+						}
+						args = tmpArr.toArray(new String[0]);
+						int n = db.delete(TBL_REQUIRE, sqlDelete, args);
+						CMN.debug("sqlDelete::", sqlDelete, n);
+						sqlDelete = "name=? and namespace=?";
+						tmpArr.clear(); tmpArr.add(script.getName()); tmpArr.add(script.getNamespace());
+						if (resources != null && resources.length > 0) {
+							sqlDelete += " and (";
+							boolean first = false;
+							for (ScriptResource resource : resources) {
+								if (first) sqlDelete += " and ";
+								else first = true;
+								sqlDelete += COL_RESOURCENAME + "!=?";
+								tmpArr.add(resource.getName());
+							}
+							sqlDelete += ")";
+						}
+						args = tmpArr.toArray(new String[0]);
+						int m = db.delete(TBL_RESOURCE, sqlDelete, args);
+						CMN.debug("sqlDelete::", sqlDelete, m);
+						CMN.debug("sqlDelete::", n, m);
+					} catch (Exception e) {
+						CMN.debug(e);
+					}
 				} else {
 					//fieldsScript.put("create", System.currentTimeMillis());
 					if (db.insert(TBL_SCRIPT, null, fieldsScript) == -1) {
