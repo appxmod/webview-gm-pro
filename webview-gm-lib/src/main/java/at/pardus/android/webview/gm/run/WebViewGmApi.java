@@ -296,14 +296,14 @@ public class WebViewGmApi {
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
 			return "";
 		}
-		CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest());
-		if (script.hasRightXmlHttpRequest()) {
+		CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
+		if (script.hasRightXmlHttpRequest()) { // todo safety
 			WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view,
 					jsonRequestString);
 			WebViewXmlHttpResponse response = request.execute();
 			
 			if (response != null) {
-				CMN.debug("response::", response);
+				//CMN.debug("response::", response);
 				return response.toJSONString();
 			}
 		}

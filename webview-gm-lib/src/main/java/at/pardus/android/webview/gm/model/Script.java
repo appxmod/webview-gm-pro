@@ -224,7 +224,6 @@ public class Script extends ScriptMetadata {
 					}
 					else if (propertyName.equals("resource")) {
 						tmp.hasRightResource(true);
-						if(resources.size()>0) continue;
 						Pattern resourcePattern = Pattern.compile("(\\S+)\\s+(.*)");
 						Matcher resourceMatcher = resourcePattern.matcher(propertyValue);
 						if (!resourceMatcher.matches()) {
@@ -265,7 +264,7 @@ public class Script extends ScriptMetadata {
 		if (requires.size() > 0) {
 			for (ScriptRequire req:requires) {
 				if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), req.getUrl())) {
-					//CMN.debug("下载::", req);
+					CMN.debug("下载::脚本::", req.getUrl());
 					req.setContent(DownloadHelper.downloadScript(req.getUrl()));
 				}
 			}
@@ -274,7 +273,7 @@ public class Script extends ScriptMetadata {
 		if (resources.size() > 0) {
 			for (ScriptResource res:resources) {
 				if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName())) {
-					//CMN.debug("下载::", res.getName(), res.getUrl());
+					CMN.debug("下载::资源::", res.getName(), res.getUrl());
 					res.setData(DownloadHelper.downloadBytes(res.getUrl()));
 				}
 				//CMN.debug("scriptStore.scriptHasResource::", scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName()));

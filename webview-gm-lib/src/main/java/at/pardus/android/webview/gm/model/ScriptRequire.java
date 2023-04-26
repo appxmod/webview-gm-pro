@@ -55,6 +55,6 @@ public class ScriptRequire {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(url);
+		return url.hashCode();
 	}
 }

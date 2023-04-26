@@ -104,11 +104,11 @@ public class ScriptResource {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		ScriptResource that = (ScriptResource) o;
-		return Objects.equals(name, that.name) && Objects.equals(url, that.url);
+		return Objects.equals(name, that.name);
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(name, url);
+		return name.hashCode();
 	}
 }

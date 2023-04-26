@@ -1191,7 +1191,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		
 		ScriptResource getResource(ScriptId scriptId, String resourceName) {
 			ScriptResource ret = null;
-			Cursor cursor = db.query(TBL_RESOURCE, COLS_RESOURCE_DATA, "name=? and namespace=? and valuename=? limit 1"
+			Cursor cursor = db.query(TBL_RESOURCE, COLS_RESOURCE_DATA, "name=? and namespace=? and resource_name=? limit 1"
 					, new String[]{scriptId.getName(), scriptId.getName(), resourceName}
 					, null, null, null);
 			if (cursor.moveToNext()) {

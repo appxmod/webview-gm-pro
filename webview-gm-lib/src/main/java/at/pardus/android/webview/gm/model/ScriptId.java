@@ -72,7 +72,7 @@ public class ScriptId {
 
 	@Override
 	public String toString() {
-		return name + ", " + namespace;
+		return name + "@" + namespace;
 	}
 
 }

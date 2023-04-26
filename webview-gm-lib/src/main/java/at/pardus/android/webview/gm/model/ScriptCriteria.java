@@ -103,7 +103,7 @@ public class ScriptCriteria extends ScriptId {
 	
 	@Override
 	public String toString() {
-		return (enabled?"":"//")+name + ", " + namespace;
+		return (enabled?"":"//")+name + "@" + namespace;
 	}
 	
 	static int Z = 0;
