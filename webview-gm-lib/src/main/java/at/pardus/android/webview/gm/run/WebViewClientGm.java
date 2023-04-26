@@ -24,6 +24,7 @@ import android.webkit.WebViewClient;
 
 import org.knziha.metaline.Metaline;
 
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import at.pardus.android.webview.gm.model.Script;
@@ -38,11 +39,13 @@ import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
  */
 public class WebViewClientGm extends WebViewClient {
 
-	private static final String TAG = WebViewClientGm.class.getName();
+	private static final String TAG = "fatal "+WebViewClientGm.class.getName();
 
 	private static final String JSCONTAINERSTART = "(function() {";
 
 	private static final String JSCONTAINEREND = "\n})()";
+	
+	private static final boolean bigcake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
 
    /**
 	unsafeWindow = (function() {
@@ -187,6 +190,14 @@ public class WebViewClientGm extends WebViewClient {
 	}
 	
 	StringBuilder buffer = new StringBuilder();
+	private LinkedHashMap<ScriptCriteria, String> bufferScript = new LinkedHashMap<ScriptCriteria, String>(
+			64 + 2, 1.0f, true) {
+		@Override
+		protected boolean removeEldestEntry(
+				Entry<ScriptCriteria, String> eldest) {
+			return size() > 64;  // todo base on size instead of number
+		}
+	};
 	
 	/**
 	 * Runs user scripts enabled for a given URL.
@@ -228,57 +239,58 @@ public class WebViewClientGm extends WebViewClient {
 		if (jsAfterScript == null) {
 			jsAfterScript = "";
 		}
-		for (ScriptCriteria script : matchingScripts) {
-			if (!pageFinished && script.hasRightRunStart() || pageFinished && script.hasRightRunEnd()) {
-				Log.i(TAG, "Running script \"" + script + "\" on " + url);
-				
-				buffer.setLength(0);
-				buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
-				
-				boolean unwrap = script.hasRightUnwrap();
-				boolean bigcake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
-				if (!bigcake) {
-					buffer.append("javascript:\n");
-					unwrap = false;
-				}
-				unwrap = true;
-				if (!unwrap) {
-					buffer.append(JSCONTAINERSTART);
-				}
-				buffer.append(JSUNSAFEWINDOW);
-				buffer.append("GM_wv.n=\"").append(script.getName().replace("\"", "\\\"")).append("\"");
-				buffer.append(";GM_wv.ns=\"").append(script.getNamespace().replace("\"", "\\\"")).append("\"");
-				buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
-				buffer.append(";GM_wv.sec=\"").append(secret).append("\"");
-				buffer.append(";GM_wv.bg=").append(jsBridgeName);
-				buffer.append(";GM_wv.hash=\"").append(("GM_"
-						+ script.getName()
-						+ script.getNamespace()
-						+ UUID.randomUUID().toString())
-						.replaceAll("[^0-9a-zA-Z_]", "")).append("\"");
-				buffer.append(";GM_wv.bg=").append(jsBridgeName)
-						.append(";").append(JSGMINFO).append("\n");
-
-				// Get @require'd scripts to inject for this script.
-				ScriptRequire[] requires = script.getRequires();
-				if (requires != null) {
-					for (ScriptRequire currentRequire : requires) {
-						//CMN.debug("currentRequire::", currentRequire.getContent());
-						buffer.append(currentRequire.getContent());
-						buffer.append("\n");
+		for (ScriptCriteria key : matchingScripts) {
+			if (!pageFinished && key.hasRightRunStart() || pageFinished && key.hasRightRunEnd()) {
+				Log.i(TAG, "Running script \"" + key + "\" on " + url);
+				String jsCode = bufferScript.get(key);
+				if (jsCode == null) {
+					Script script = ScriptStoreSQLite.get(key);
+					buffer.setLength(0);
+					buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
+					boolean unwrap = key.hasRightUnwrap();
+					if (!bigcake) {
+						buffer.append("javascript:\n");
+						unwrap = false;
 					}
+					unwrap = true;
+					if (!unwrap) {
+						buffer.append(JSCONTAINERSTART);
+					}
+					buffer.append(JSUNSAFEWINDOW);
+					buffer.append("GM_wv.n=\"").append(key.getName().replace("\"", "\\\"")).append("\"");
+					buffer.append(";GM_wv.ns=\"").append(key.getNamespace().replace("\"", "\\\"")).append("\"");
+					buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
+					buffer.append(";GM_wv.sec=\"").append(secret).append("\"");
+					buffer.append(";GM_wv.bg=").append(jsBridgeName);
+					buffer.append(";GM_wv.hash=\"").append(("GM_"
+							+ key.getName()
+							+ key.getNamespace()
+							+ UUID.randomUUID().toString())
+							.replaceAll("[^0-9a-zA-Z_]", "")).append("\"");
+					buffer.append(";GM_wv.bg=").append(jsBridgeName)
+							.append(";").append(JSGMINFO).append("\n");
+					
+					// Get @require'd scripts to inject for this script.
+					ScriptRequire[] requires = script.getRequires();
+					if (requires != null) {
+						for (ScriptRequire currentRequire : requires) {
+							//CMN.debug("currentRequire::", currentRequire.getContent());
+							buffer.append(currentRequire.getContent());
+							buffer.append("\n");
+						}
+					}
+					
+					buffer.append(jsBeforeScript)
+							.append(script.getContent())
+							.append(jsAfterScript);
+					if (!unwrap) {
+						buffer.append(JSCONTAINEREND);
+					}
+					
+					// todo FIXME java.lang.OutOfMemoryError: Failed to allocate a 16 byte allocation with 1795200 free bytes and 1753KB until OOM
+					jsCode = buffer.toString();
+					bufferScript.put(key, jsCode);
 				}
-				
-				buffer.append(jsBeforeScript)
-						.append(script.getContent())
-						.append(jsAfterScript);
-				if (!unwrap) {
-					buffer.append(JSCONTAINEREND);
-				}
-				
-				// todo FIXME java.lang.OutOfMemoryError: Failed to allocate a 16 byte allocation with 1795200 free bytes and 1753KB until OOM
-				String jsCode = buffer.toString();
-				
                 if (bigcake) {
                     view.evaluateJavascript(jsCode, null);
                 } else {

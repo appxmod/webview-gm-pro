@@ -147,4 +147,13 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=26, flagSize=2) public int hasRightToRun(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=28) public void hasRightUnwrap(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=28) public boolean hasRightUnwrap(){ rights|=Z; throw new RuntimeException(); }
+	
+	public void release() {
+		this.name = null;
+		this.namespace = null;
+		this.secret = null;
+		this.match = null;
+		this.enabled = false;
+		this.rights = 0;
+	}
 }

@@ -16,6 +16,7 @@
 
 package at.pardus.android.webview.gm.store;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -26,12 +27,10 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,14 +53,14 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 
 	private static final String TAG = "fatal "+ScriptStoreSQLite.class.getName();
 
-	private Context context;
+	private Activity context;
 
 	private ScriptDbHelper dbHelper;
 
 	private ScriptCache cache;
 	
-	public final HashMap<ScriptCriteria, ScriptCriteria> registryMap = new HashMap<>();
-	public final ArrayList<ScriptCriteria> registry = new ArrayList<>();
+	public final HashMap<ScriptCriteria, ScriptCriteria> registryMap = new HashMap<>(1024);
+	public final ArrayList<ScriptCriteria> registry = new ArrayList<>(1024);
 	
 
 	// @Override
@@ -85,7 +84,6 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			CMN.debug("matchingIds::", matchingIds);
 			CMN.debug(matchingIds);
 			//scripts = matchingIds.length==0?null:dbHelper.selectScripts(matchingIds, null, metaOnly);
-			// todo separate id id cahce and script cache
 			cache.put(url, matchingIds);
 		}
 		return scripts;
@@ -115,7 +113,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 
 	/** ret -1 : fail   0 : added  1 : edited */
 	// @Override
+	//@AnyThread
 	public int add(Script script) {
+		// install or update
 		if (dbHelper == null) {
 			Log.e(TAG, "Cannot add user script (database not available)");
 			return -1;
@@ -134,7 +134,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		}
 		//dbHelper.deleteScript(script);
 		if (dbHelper.insertScript(script, rowId) != -1) {
-			initCache(); // todo optimize
+			invalidateCache(script, false);
 			return rowId == -1 ? 0 : 1;
 		} else {
 			return -1;
@@ -142,13 +142,13 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	}
 
 	// @Override
-	public void enable(ScriptId id) {
+	public void enable(ScriptId id) { // todo 更新从表
 		if (dbHelper == null) {
 			Log.e(TAG, "Cannot enable user script (database not available)");
 			return;
 		}
 		dbHelper.updateScriptEnabled(id, true);
-		initCache();
+		invalidateCache(id, false);
 	}
 
 	// @Override
@@ -158,7 +158,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			return;
 		}
 		dbHelper.updateScriptEnabled(id, false);
-		initCache();
+		invalidateCache(id, false);
 	}
 
 	// @Override
@@ -168,7 +168,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			return;
 		}
 		dbHelper.deleteScript(id);
-		initCache();
+		invalidateCache(id, true);
 	}
 
 	// @Override
@@ -230,7 +230,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	 * @param context
 	 *            the application's context
 	 */
-	public ScriptStoreSQLite(Context context) {
+	public ScriptStoreSQLite(Activity context) {
 		this.context = context;
 	}
 
@@ -299,7 +299,43 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		}
 		
 	}
-
+	
+	private void invalidateCache(ScriptId script, boolean delete) {
+		if (Thread.currentThread().getId() == CMN.mid) {
+			doInvalidateCache(script, delete);
+		} else {
+			context.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					doInvalidateCache(script, delete);
+				}
+			});
+		}
+	}
+	
+	private void doInvalidateCache(ScriptId script, boolean delete) {
+		cache.urlScripts.clear();
+		ScriptCriteria stored = registryMap.get(script);
+		if (delete) {
+			if (stored != null) {
+				registryMap.remove(stored);
+				stored.release();
+			}
+		} else {
+			ScriptCriteria tmp = dbHelper.getScriptCriteria(stored);
+			if (stored == null) {
+				registryMap.put(tmp, tmp);
+				tmp.runtimeId = registry.size();
+				tmp.secret = ""; // todo generate secret key to separate and secure script environs.
+				registry.add(tmp);
+			} else { // 更新
+				stored.rights = tmp.rights;
+				stored.setEnabled(tmp.isEnabled());
+				tmp = stored;
+			}
+		}
+	}
+	
 	/**
 	 * Creates an empty ScriptCache object and initializes its cache of all
 	 * available and enabled user script matching criteria.
@@ -518,10 +554,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		 * @param metaOnly
 		 * @return an array of matching script objects; an empty array if none
 		 *         found
+		 * todo not 用于获取脚本对应的资源
 		 */
 		public Script[] selectScripts(ScriptId[] ids, Boolean enabled, boolean metaOnly) {
 			// 用于获取需要运行的脚本
-			// 用于获取脚本对应的资源
 			// 用于显示脚本列表
 			String selectionStr = null, selectionIdStr = null;
 			String[] selectionArgsArr = null, selectionIdArgsArr = null;
@@ -548,15 +584,14 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				selectionArgsArr = selectionArgs
 						.toArray(new String[selectionArgs.size()]);
 			}
-			
 			// all matches
-			Map<ScriptId, String[]> matches = metaOnly?null:selectPatterns(TBL_MATCH, selectionIdStr, selectionIdArgsArr);
+			// Map<ScriptId, String[]> matches = metaOnly?null:selectPatterns(TBL_MATCH, selectionIdStr, selectionIdArgsArr);
 			
 			// all requires
 			Map<ScriptId, List<ScriptRequire>> requires = metaOnly?null:selectRequires(TBL_REQUIRE, selectionIdStr, selectionIdArgsArr);
 			
 			// all resources
-			Map<ScriptId, List<ScriptResource>> resources = metaOnly?null:selectResources(TBL_RESOURCE, selectionIdStr, selectionIdArgsArr);
+			// Map<ScriptId, List<ScriptResource>> resources = metaOnly?null:selectResources(TBL_RESOURCE, selectionIdStr, selectionIdArgsArr);
 			
 			Cursor cursor = db.query(TBL_SCRIPT, metaOnly?COLS_SCRIPT_META:COLS_SCRIPT, selectionStr, selectionArgsArr
 					, null, null, null);
@@ -569,7 +604,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				int cc = 0;
 				final String name = cursor.getString(cc++); final String namespace = cursor.getString(cc++);
 				final ScriptId id = new ScriptId(name, namespace);
-				String[] matchArr;
+				String[] matchArr = null;
 				String description = cursor.getString(cc++);
 				String downloadurl = cursor.getString(cc++);
 				String updateurl = cursor.getString(cc++);
@@ -582,21 +617,16 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				int rights = cursor.getInt(cc++);
 				String content;
 				ScriptRequire[] requireArr;
-				ScriptResource[] resourceArr;
+				ScriptResource[] resourceArr = null;
 				if (metaOnly) {
 					content = null;
 					requireArr = null;
-					resourceArr = null;
-					matchArr = null;
 				} else {
 					List<ScriptRequire> require = requires.get(id);
 					requireArr = (require == null) ? null : require
 							.toArray(new ScriptRequire[require.size()]);
-					List<ScriptResource> resource = resources.get(id);
-					resourceArr = (resource == null) ? null
-							: resource.toArray(new ScriptResource[resource.size()]);
-					content = cursor.getString(12);
-					matchArr = matches.get(cc++);
+					content = cursor.getString(cc++);
+					//matchArr = matches.get(cc++);
 				}
 				scriptsArr[i] = new Script(name, namespace, matchArr, description, downloadurl,
 						updateurl, installurl, icon, runat, unwrap == 1,
@@ -607,7 +637,24 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			cursor.close();
 			return scriptsArr;
 		}
-
+		
+		
+		public ScriptCriteria getScriptCriteria(ScriptId id) {
+			Cursor cursor = db.query(TBL_MATCH, COLS_PATTERN_ENABLED, "where name=? and namespace=? limit 1", new String[]{id.getName(), id.getNamespace()}
+					, null, null, null);
+			int cc=0;
+			ScriptCriteria ret = null;
+			if (cursor.moveToNext()) {
+				String name = cursor.getString(0);
+				String namespace = cursor.getString(1);
+				boolean enable_ = cursor.getInt(3)==1;
+				int rights = cursor.getInt(4);
+				ret = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
+			}
+			cursor.close();
+			return ret;
+		}
+		
 		/**
 		 * Retrieves script criteria objects from the database.
 		 * 
@@ -655,6 +702,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						, null, null, null);
 				ScriptCriteria[] ret = null;
 				if(BuildConfig.DEBUG) ret = new ScriptCriteria[cursor.getCount()];
+				boolean init = scriptStore.registry.size()==0;
 				int cc=0;
 				while (cursor.moveToNext()) {
 					String name = cursor.getString(0);
@@ -662,7 +710,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					boolean enable_ = cursor.getInt(3)==1;
 					int rights = cursor.getInt(4);
 					ScriptCriteria tmp = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
-					ScriptCriteria stored = scriptStore.registryMap.get(tmp);
+					ScriptCriteria stored = init?null:scriptStore.registryMap.get(tmp);
 					if (stored == null) {
 						scriptStore.registryMap.put(tmp, tmp);
 						tmp.runtimeId = scriptStore.registry.size();
