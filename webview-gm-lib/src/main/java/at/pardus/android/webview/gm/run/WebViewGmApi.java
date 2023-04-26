@@ -112,6 +112,7 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String getValue(String runtimeId, String secret, String name) {
+		//CMN.debug("getValue::", runtimeId, secret, ScriptStoreSQLite.getRunningScript(runtimeId));
 		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
 		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG, "Call to \"getValue\" did not supply correct secret");
@@ -295,12 +296,14 @@ public class WebViewGmApi {
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
 			return "";
 		}
+		CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest());
 		if (script.hasRightXmlHttpRequest()) {
 			WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view,
 					jsonRequestString);
 			WebViewXmlHttpResponse response = request.execute();
 			
 			if (response != null) {
+				CMN.debug("response::", response);
 				return response.toJSONString();
 			}
 		}

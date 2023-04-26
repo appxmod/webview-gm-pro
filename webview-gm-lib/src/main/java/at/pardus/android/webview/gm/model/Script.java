@@ -117,7 +117,7 @@ public class Script extends ScriptMetadata {
 			Matcher matcher = pattern.matcher(line);
 			if (matcher.matches()) {
 				String propertyName = matcher.group(1);
-				String propertyValue = matcher.group(2);
+				String propertyValue = matcher.groupCount()>=2?matcher.group(2):null;
 				if (propertyValue != null && propertyValue.equals("")) {
 					propertyValue = null;
 				}
@@ -145,6 +145,7 @@ public class Script extends ScriptMetadata {
 						}
 					}
 					else if (propertyName.equals("grant")) {
+						//CMN.debug("grant::", propertyValue, "GM_xmlhttpRequest".equals(propertyValue));
 						switch (propertyValue) {
 							case "GM_getValue":
 								tmp.hasRightGetValue(true);
@@ -194,8 +195,9 @@ public class Script extends ScriptMetadata {
 							case "GM_addElement":
 								tmp.hasRightAddElement(true);
 							break;
-							case "GM_xmlHttpRequest":
+							case "GM_xmlhttpRequest":
 								tmp.hasRightXmlHttpRequest(true);
+								//CMN.debug("----GM_xmlhttpRequest::!!!", tmp.hasRightXmlHttpRequest());
 							break;
 							case "GM_download":
 								tmp.hasRightDownload(true);
@@ -203,6 +205,9 @@ public class Script extends ScriptMetadata {
 							case "GM_log":
 								tmp.hasRightLog(true);
 							break;
+//							default:
+//								CMN.debug("!!!GM_xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
+//							break;
 						}
 					}
 					else if (propertyName.equals("version")) {
@@ -226,7 +231,7 @@ public class Script extends ScriptMetadata {
 						Pattern resourcePattern = Pattern.compile("(\\S+)\\s+(.*)");
 						Matcher resourceMatcher = resourcePattern.matcher(propertyValue);
 						if (!resourceMatcher.matches()) {
-							CMN.Log("fatal parsing::", "!resourceMatcher.matches()");
+							CMN.debug("fatal parsing::", "!resourceMatcher.matches()");
 							return null;
 						}
 						String required = resourceMatcher.group(1);
@@ -253,7 +258,7 @@ public class Script extends ScriptMetadata {
 				}
 			}
 		}
-		CMN.debug("parsing::", metaBlockEnded+" "+name+" "+namespace);
+		//CMN.debug("parsing::", metaBlockEnded+" "+name+" "+namespace);
 		if (!metaBlockEnded) {
 			return null;
 		}
@@ -276,7 +281,7 @@ public class Script extends ScriptMetadata {
 		if (tmp.hasRightToRun()==0) {
 			tmp.hasRightRunEnd(true);
 		}
-		CMN.debug("tmp.rights::", tmp.rights);
+		CMN.debug("tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest());
 		return new Script(name, namespace, matchArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
 				unwrap, version, requireArr, resourceArr, true, tmp.rights, scriptStr);

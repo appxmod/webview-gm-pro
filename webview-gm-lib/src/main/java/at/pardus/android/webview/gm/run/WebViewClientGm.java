@@ -24,6 +24,7 @@ import android.webkit.WebViewClient;
 
 import org.knziha.metaline.Metaline;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -228,8 +229,7 @@ public class WebViewClientGm extends WebViewClient {
 			return;
 		}
 		ScriptCriteria[] matchingScripts = ScriptStoreSQLite.get(url, true, false);
-		//CMN.debug("matchingScripts::", matchingScripts);
-		CMN.debug(matchingScripts);
+		CMN.debug("matchingScripts::", Arrays.toString(matchingScripts));
 		if (matchingScripts == null) {
 			return;
 		}
@@ -240,6 +240,7 @@ public class WebViewClientGm extends WebViewClient {
 			jsAfterScript = "";
 		}
 		for (ScriptCriteria key : matchingScripts) {
+			//CMN.debug("hasRightRunStart::", key, key.hasRightRunStart(), key.hasRightRunEnd());
 			if (!pageFinished && key.hasRightRunStart() || pageFinished && key.hasRightRunEnd()) {
 				Log.i(TAG, "Running script \"" + key + "\" on " + url);
 				String jsCode = bufferScript.get(key);
@@ -260,8 +261,8 @@ public class WebViewClientGm extends WebViewClient {
 					buffer.append("GM_wv.n=\"").append(key.getName().replace("\"", "\\\"")).append("\"");
 					buffer.append(";GM_wv.ns=\"").append(key.getNamespace().replace("\"", "\\\"")).append("\"");
 					buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
-					buffer.append(";GM_wv.id=\"").append(script.runtimeId).append("\"");
-					buffer.append(";GM_wv.sec=\"").append(script.secret).append("\"");
+					buffer.append(";GM_wv.id=\"").append(key.runtimeId).append("\"");
+					buffer.append(";GM_wv.sec=\"").append(key.secret).append("\"");
 					buffer.append(";GM_wv.bg=").append(jsBridgeName);
 					buffer.append(";GM_wv.hash=\"").append(("GM_"
 							+ key.getName()
