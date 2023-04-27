@@ -283,7 +283,8 @@ public class WebViewGmApi {
 						}
 					}
 					CMN.debug("doit::", doit);
-					if (doit) { // todo let user choose
+					// todo let user decide if the domain is not defined in metablock @connect sth.com
+					if (doit) {
 						WebViewXmlHttpResponse response = request.execute();
 						if (response != null) {
 							//CMN.debug("response::", response);
@@ -320,14 +321,35 @@ public class WebViewGmApi {
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
 			return "";
 		}
-		if(script.hasRightCookie()) { // todo safety
+		if(script.hasRightCookie()) {
 			JSONObject response = new JSONObject();
 			try {
 				JSONObject json = new JSONObject(details);
-				CookieManager cookieManager = CookieManager.getInstance();
-				String CookieStr = cookieManager.getCookie(json.getString("url"));
-				CMN.debug("CookieStr::", CookieStr);
-				response.put("value", CookieStr);
+				String url = json.getString("url");
+				boolean doit = false;
+				String domain = getDomain(url);
+				if (script.connect != null) {
+					for (String conn : script.connect) {
+						if (conn.startsWith("cookie:") && domain.endsWith(conn = conn.substring(7))) {
+							int num = domainSegNum(conn);
+							if (num == 1) {
+								doit = true;
+								break;
+							}
+							if (num > 1 && conn.length() == domain.length()) {
+								doit = true;
+								break;
+							}
+						}
+					}
+				}
+				// todo let user decide if the domain is not defined in metablock @connect cookie:sth.com
+				if (doit) {
+					CookieManager cookieManager = CookieManager.getInstance();
+					String CookieStr = cookieManager.getCookie(url);
+					CMN.debug("CookieStr::", CookieStr);
+					response.put("value", CookieStr);
+				}
 			} catch (Exception e) {
 				CMN.debug(e);
 			}

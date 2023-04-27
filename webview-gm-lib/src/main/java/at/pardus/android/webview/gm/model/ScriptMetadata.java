@@ -109,4 +109,11 @@ public class ScriptMetadata extends ScriptCriteria {
 	public String toString() {
 		return super.toString() + ": " + description;
 	}
+	
+	public int getExternalsCount() {
+		int ret = 0;
+		if(requires!=null) ret += requires.length;
+		if(resources!=null) ret += resources.length;
+		return ret;
+	}
 }

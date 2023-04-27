@@ -416,6 +416,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String COL_ENABLED = "enabled";
 		private static final String COL_RIGHTS = "rights";
 		private static final String COL_TIME = "rights";
+		private static final String COL_EXTERNALS = "exts";
 		private static final String TBL_SCRIPT_CREATE = "CREATE TABLE "
 				+ TBL_SCRIPT + " (" + COL_NAME + " TEXT NOT NULL" + ", "
 				+ COL_NAMESPACE + " TEXT NOT NULL" + ", " + COL_DESCRIPTION
@@ -427,6 +428,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				+ COL_ENABLED + " INTEGER NOT NULL DEFAULT 1" + ", "
 				+ COL_RIGHTS + " INTEGER NOT NULL DEFAULT 0" + ", "
 				+ COL_TIME + " INTEGER NOT NULL DEFAULT 0" + ", "
+				+ COL_EXTERNALS + " INTEGER NOT NULL DEFAULT 0" + ", "
 				+ "PRIMARY KEY (" + COL_NAME + ", " + COL_NAMESPACE + "));";
 
 //		private static final String COL_PATTERN = "pattern";
@@ -599,6 +601,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					if(!columnExists(db, TBL_MATCH, COL_USER_CONNECT)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_USER_CONNECT+" TEXT DEFAULT NULL");
 					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
 				}
+				if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
 			}
 		}
 		
@@ -1033,6 +1036,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			fieldsScript.put(COL_ENABLED, script.isEnabled());
 			fieldsScript.put(COL_RIGHTS, script.rights);
 			fieldsScript.put(COL_TIME, System.currentTimeMillis());
+			fieldsScript.put(COL_EXTERNALS, script.getExternalsCount());
 			db.beginTransaction();
 			try {
 				if(rowId!=-1) {
