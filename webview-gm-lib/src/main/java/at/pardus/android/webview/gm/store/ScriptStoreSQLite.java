@@ -397,7 +397,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final int DB_SCHEMA_VERSION_4 = 4;
 		private static final int DB_SCHEMA_VERSION_3 = 3;
 		private static final int DB_SCHEMA_VERSION_2 = 2;
-		private static final int DB_VERSION = 10;
+		private static final int DB_VERSION = 11;
 
 		private static final String DB = "webviewgm";
 
@@ -415,7 +415,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String COL_CONTENT = "content";
 		private static final String COL_ENABLED = "enabled";
 		private static final String COL_RIGHTS = "rights";
-		private static final String COL_TIME = "rights";
+		private static final String COL_TIME = "time";
 		private static final String COL_EXTERNALS = "exts";
 		private static final String TBL_SCRIPT_CREATE = "CREATE TABLE "
 				+ TBL_SCRIPT + " (" + COL_NAME + " TEXT NOT NULL" + ", "
@@ -600,8 +600,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					if(!columnExists(db, TBL_MATCH, COL_CONNECT))  db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_CONNECT+" TEXT DEFAULT NULL");
 					if(!columnExists(db, TBL_MATCH, COL_USER_CONNECT)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_USER_CONNECT+" TEXT DEFAULT NULL");
 					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
+					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
+					if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
 				}
-				if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
 			}
 		}
 		
@@ -618,6 +619,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			} catch (Exception e) {
 				CMN.Log(e);
 			}
+			CMN.debug("!columnExists::", tableName, columnName);
 			return false;
 		}
 
