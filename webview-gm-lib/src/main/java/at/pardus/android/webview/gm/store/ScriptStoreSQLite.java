@@ -59,6 +59,16 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 
 	private ScriptCache cache;
 	
+	public final StringBuilder buffer = new StringBuilder();
+	public final LinkedHashMap<ScriptCriteria, String> bufferedScript = new LinkedHashMap<ScriptCriteria, String>(
+			64 + 2, 1.0f, true) {
+		@Override
+		protected boolean removeEldestEntry(
+				Entry<ScriptCriteria, String> eldest) {
+			return size() > 64;  // todo base on size instead of number
+		}
+	};
+	
 	public final HashMap<ScriptCriteria, ScriptCriteria> registryMap = new HashMap<>(1024);
 	public final ArrayList<ScriptCriteria> registry = new ArrayList<>(1024);
 	
@@ -316,6 +326,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	private void doInvalidateCache(ScriptId key, boolean delete) {
 		try {
 			cache.urlScripts.clear();
+			bufferedScript.remove(key);
 			ScriptCriteria stored = registryMap.get(key);
 			if (delete) {
 				if (stored != null) {

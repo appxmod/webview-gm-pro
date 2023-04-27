@@ -26,11 +26,9 @@ import org.knziha.metaline.Metaline;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.UUID;
 
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptCriteria;
-import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptRequire;
 import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
@@ -56,6 +54,9 @@ public class WebViewClientGm extends WebViewClient {
 	}());
 	window.wrappedJSObject = unsafeWindow;
 	var GM_wv={};
+	function GM_isInstalled(a,b,c) {
+		GM_wv.bg.isInstalled(a,b,c);
+	}
 	function GM_listValues() {
 		return GM_wv.bg.listValues(GM_wv.id, GM_wv.sec).split(",");
 	}
@@ -200,7 +201,11 @@ public class WebViewClientGm extends WebViewClient {
 	private String jsBridgeName;
 
 	private String secret;
-
+	
+	private final StringBuilder buffer;
+	
+	private final  LinkedHashMap<ScriptCriteria, String> bufferScript ;
+	
 	/**
 	 * Constructs a new WebViewClientGm with a ScriptStoreSQLite.
 	 *
@@ -218,17 +223,9 @@ public class WebViewClientGm extends WebViewClient {
 		this.ScriptStoreSQLite = ScriptStoreSQLite;
 		this.jsBridgeName = jsBridgeName;
 		this.secret = secret;
+		buffer = ScriptStoreSQLite.buffer;
+		bufferScript = ScriptStoreSQLite.bufferedScript;
 	}
-	
-	StringBuilder buffer = new StringBuilder();
-	private LinkedHashMap<ScriptCriteria, String> bufferScript = new LinkedHashMap<ScriptCriteria, String>(
-			64 + 2, 1.0f, true) {
-		@Override
-		protected boolean removeEldestEntry(
-				Entry<ScriptCriteria, String> eldest) {
-			return size() > 64;  // todo base on size instead of number
-		}
-	};
 	
 	/**
 	 * Runs user scripts enabled for a given URL.
@@ -329,23 +326,7 @@ public class WebViewClientGm extends WebViewClient {
 			}
 		}
 	}
-
-   /**
-	window.external = {
-		Tampermonkey : {
-			getVersion : function(e){
-				e({version:'3.0.0', id:'infinite'})
-			}
-			, isInstalled : function(a,b,c){
-				window.isInstalledCb = c;
-				bg.isInstalled(a,b,'isInstalledCb');
-			}
-		}
-	}
-	 */
-	@Metaline
-	private static final String External = "https://github.com/Tampermonkey/tampermonkey/issues/322";
-
+	
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		runMatchingScripts(view, url, false, null, null);
@@ -354,9 +335,6 @@ public class WebViewClientGm extends WebViewClient {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		runMatchingScripts(view, url, true, null, null);
-		if (url.startsWith("https://greasyfork.org/")) {
-			view.evaluateJavascript(External.replace("bg", jsBridgeName), null);
-		}
 	}
 
 	/**
