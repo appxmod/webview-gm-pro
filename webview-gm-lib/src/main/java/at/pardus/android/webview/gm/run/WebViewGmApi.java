@@ -258,19 +258,57 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String xmlHttpRequest(String runtimeId, String secret, String jsonRequestString) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
-		if (script!=null) {
-			CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
-			if (script.hasRightXmlHttpRequest()) { // todo safety
-				WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view, jsonRequestString);
-				WebViewXmlHttpResponse response = request.execute();
-				if (response != null) {
-					//CMN.debug("response::", response);
-					return response.toJSONString();
+		try {
+			ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+			if (script != null) {
+				CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
+				if (script.hasRightXmlHttpRequest()) {
+					boolean doit = false;
+					WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view, jsonRequestString);
+					String domain = getDomain(request.url);
+					CMN.debug(domain, "xmlHttpRequest::connect", script.connect);
+					if (script.connect != null) {
+						for (String conn : script.connect) {
+							if (domain.endsWith(conn)) {
+								int num = domainSegNum(conn);
+								if (num == 1) {
+									doit = true;
+									break;
+								}
+								if (num > 1 && conn.length() == domain.length()) {
+									doit = true;
+									break;
+								}
+							}
+						}
+					}
+					CMN.debug("doit::", doit);
+					if (doit) { // todo let user choose
+						WebViewXmlHttpResponse response = request.execute();
+						if (response != null) {
+							//CMN.debug("response::", response);
+							return response.toJSONString();
+						}
+					}
 				}
 			}
+		} catch (Exception e) {
+			CMN.debug(e);
 		}
 		return "";
+	}
+	
+	private String getDomain(String url) {
+		int st = url.indexOf(":")+3;
+		int ed = url.indexOf("/", st);
+		if(ed==-1) ed = url.length();
+		return url.substring(st, ed);
+	}
+	
+	private int domainSegNum(String conn) {
+		int cc=0, idx=0;
+		while ((idx=conn.indexOf(".", idx+1))>0) cc++;
+		return cc;
 	}
 	
 	// https://github.com/Tampermonkey/tampermonkey/issues/465

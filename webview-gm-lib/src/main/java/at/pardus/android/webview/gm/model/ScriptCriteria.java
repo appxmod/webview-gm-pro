@@ -33,7 +33,9 @@ import at.pardus.android.webview.gm.util.CriterionMatcher;
  */
 public class ScriptCriteria extends ScriptId {
 	private String[] match;
-	private String[] connect;
+	public String[] connect;
+	public String[] connected;
+	public String version;
 	protected boolean enabled;
 	public long rights;
 	public String secret;
@@ -47,11 +49,13 @@ public class ScriptCriteria extends ScriptId {
 		this.enabled = true;
 	}
 	
-	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable, long rights) {
+	public ScriptCriteria(String name, String namespace, String version, String[] match, String[] connect, boolean bEnable, long rights) {
 		super(name, namespace);
 		this.match = match;
 		this.enabled = bEnable;
 		this.rights = rights;
+		this.version = version;
+		this.connect = connect;
 	}
 
 	/**

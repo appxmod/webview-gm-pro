@@ -36,9 +36,9 @@ public class Script extends ScriptMetadata {
 
 	private String content;
 
-	public Script(String name, String namespace, String[] match, String description,
+	public Script(String name, String namespace, String version, String[] match, String[] connect, String description,
 			String downloadurl, String updateurl, String installurl,
-			String icon, String runAt, boolean unwrap, String version,
+			String icon, String runAt, boolean unwrap,
 			ScriptRequire[] requires, ScriptResource[] resources
 			, boolean bEnable, long rights, String content) {
 		super(name, namespace, match, description,
@@ -46,6 +46,7 @@ public class Script extends ScriptMetadata {
 				version, requires, resources, bEnable);
 		this.content = content;
 		this.rights = rights;
+		this.connect = connect;
 	}
 
 	public String getContent() {
@@ -94,6 +95,7 @@ public class Script extends ScriptMetadata {
 			updateurl = downloadurl;
 		}
 		ArrayList<String> match = new ArrayList<>();
+		ArrayList<String> connect = new ArrayList<>();
 		ArrayList<ScriptRequire> requires = new ArrayList<>();
 		ArrayList<ScriptResource> resources = new ArrayList<>();
 
@@ -266,6 +268,8 @@ public class Script extends ScriptMetadata {
 					} else if (propertyName.equals("match")) {
 						match.add("=");
 						match.add(propertyValue);
+					} else if (propertyName.equals("connect")) {
+						connect.add(propertyValue);
 					}
 				}
 				if (propertyName.equals("unwrap")) {
@@ -281,6 +285,7 @@ public class Script extends ScriptMetadata {
 			return null;
 		}
 		String[] matchArr = null;
+		String[] connectArr = null;
 		ScriptRequire[] requireArr = null;
 		ScriptResource[] resourceArr = null;
 		if (requires.size() > 0) {
@@ -305,12 +310,15 @@ public class Script extends ScriptMetadata {
 		if (match.size() > 0) {
 			matchArr = match.toArray(new String[match.size()]);
 		}
+		if (connect.size() > 0) {
+			connectArr = connect.toArray(new String[connect.size()]);
+		}
 		if (tmp.hasRightToRun()==0) {
 			tmp.hasRightRunEnd(true);
 		}
 		CMN.debug("parsed tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest(), Arrays.toString(requireArr));
-		return new Script(name, namespace, matchArr,
+		return new Script(name, namespace, version, matchArr, connectArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
-				unwrap, version, requireArr, resourceArr, true, tmp.rights, scriptStr);
+				unwrap, requireArr, resourceArr, true, tmp.rights, scriptStr);
 	}
 }

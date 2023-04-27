@@ -60,7 +60,7 @@ public class WebViewXmlHttpRequest {
 	private boolean synchronous;
 	private int timeout;
 	private JSONObject upload;
-	private String url;
+	public String url;
 	private String user;
 	private final WebView view;
 
@@ -77,6 +77,7 @@ public class WebViewXmlHttpRequest {
 			this.url = jsonObject.getString("url");
 		} catch (JSONException e) {
 			Log.e(TAG, "JSON parsing exception:" + e.getMessage());
+			this.url = "";
 			return;
 		}
 
