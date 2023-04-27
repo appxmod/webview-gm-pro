@@ -17,15 +17,13 @@
 package at.pardus.android.webview.gm.run;
 
 import android.util.Log;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import org.json.JSONObject;
 
-import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptCriteria;
-import at.pardus.android.webview.gm.model.ScriptId;
 import at.pardus.android.webview.gm.model.ScriptResource;
 import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.store.ScriptStoreSQLite;
@@ -73,12 +71,8 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String listValues(String runtimeId, String secret) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG, "Call to \"listValues\" did not supply correct secret");
-			return null;
-		}
-		if (script.hasRightListValues()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightListValues()) {
 			String[] values = ScriptStoreSQLite.getValueNames(script);
 			if (values == null || values.length == 0) {
 				return "";
@@ -113,12 +107,8 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String getValue(String runtimeId, String secret, String name) {
 		//CMN.debug("getValue::", runtimeId, secret, ScriptStoreSQLite.getRunningScript(runtimeId));
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG, "Call to \"getValue\" did not supply correct secret");
-			return null;
-		}
-		if (script.hasRightGetValue()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightGetValue()) {
 			String v = ScriptStoreSQLite.getValue(script, name);
 			//CMN.debug("getValue::", name, v);
 			return v;
@@ -143,12 +133,8 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void setValue(String runtimeId, String secret, String name, String value) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG, "Call to \"setValue\" did not supply correct secret");
-			return;
-		}
-		if (script.hasRightSetValue()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightSetValue()) {
 			//CMN.debug("setValue::", name, value==null?-1:value.length(), value);
 			ScriptStoreSQLite.setValue(script, name, value);
 		}
@@ -169,12 +155,8 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void deleteValue(String runtimeId, String secret, String name) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG, "Call to \"deleteValue\" did not supply correct secret");
-			return;
-		}
-		if (script.hasRightDeleteValue()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightDeleteValue()) {
 			ScriptStoreSQLite.deleteValue(script, name);
 		}
 	}
@@ -194,12 +176,8 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void log(String runtimeId, String secret, String message) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG, "Call to \"log\" did not supply correct secret");
-			return;
-		}
-		if (script.hasRightLog()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightLog()) {
 			Log.i("webview-gm", script.getName() + ", " + script.getNamespace() + ": " + message);
 		}
 	}
@@ -220,13 +198,8 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String getResourceURL(String runtimeId, String secret, String resourceName) {
 		CMN.debug("getResourceURL::", resourceName);
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG,
-					"Call to \"getResourceURL\" did not supply correct secret");
-			return "";
-		}
-		if (script.hasRightResource()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightResource()) {
 			try {
 				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
 				if (resource != null) {
@@ -256,13 +229,8 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String getResourceText(String runtimeId, String secret, String resourceName) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG,
-					"Call to \"getResourceText\" did not supply correct secret");
-			return "";
-		}
-		if (script.hasRightResource()) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null && script.hasRightResource()) {
 			try {
 				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
 				if (resource != null) {
@@ -290,23 +258,79 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String xmlHttpRequest(String runtimeId, String secret, String jsonRequestString) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId);
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if (script!=null) {
+			CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
+			if (script.hasRightXmlHttpRequest()) { // todo safety
+				WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view, jsonRequestString);
+				WebViewXmlHttpResponse response = request.execute();
+				if (response != null) {
+					//CMN.debug("response::", response);
+					return response.toJSONString();
+				}
+			}
+		}
+		return "";
+	}
+	
+	// https://github.com/Tampermonkey/tampermonkey/issues/465
+    @JavascriptInterface
+	public String cookieList(String runtimeId, String secret, String details, String callback) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
 		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
 			return "";
 		}
-		CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
-		if (script.hasRightXmlHttpRequest()) { // todo safety
-			WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view,
-					jsonRequestString);
-			WebViewXmlHttpResponse response = request.execute();
-			
-			if (response != null) {
-				//CMN.debug("response::", response);
-				return response.toJSONString();
+		if(script.hasRightCookie()) { // todo safety
+			JSONObject response = new JSONObject();
+			try {
+				JSONObject json = new JSONObject(details);
+				CookieManager cookieManager = CookieManager.getInstance();
+				String CookieStr = cookieManager.getCookie(json.getString("url"));
+				CMN.debug("CookieStr::", CookieStr);
+				response.put("value", CookieStr);
+			} catch (Exception e) {
+				CMN.debug(e);
 			}
+			this.view.post(new Runnable() {
+				@Override
+				public void run() {
+					view.evaluateJavascript("(function() { unsafeWindow[\""
+							+ callback + "\"](JSON.parse(" + JSONObject.quote(response.toString())
+							+ ")); ", null);
+				}
+			});
 		}
 		return "";
+	}
+	
+	@JavascriptInterface
+	public boolean configDomain(String runtimeId, String secret, boolean setIfNonSet, String options) {
+		return false;
+	}
+	
+	
+    @JavascriptInterface
+	public void blockImage(String runtimeId, String secret, boolean block, boolean reload) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightBlockImage()) {
+		
+		}
+	}
+	
+    @JavascriptInterface
+	public void blockCorsJump(String runtimeId, String secret, boolean block) {
+		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightBlockCorsJump()) {
+		
+		}
+	}
+	
+	// https://github.com/Tampermonkey/tampermonkey/issues/322
+    @JavascriptInterface
+	public void isInstalled(String name, String namespace, String callback) {
+		// console.log('Yes, ' + i.name + ' version ' + i.version + ' is installed and ' + (i.enabled ? 'enabled' : 'disabled') + '.');
+		
 	}
 }

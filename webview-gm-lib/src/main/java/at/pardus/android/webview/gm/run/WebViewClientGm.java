@@ -92,35 +92,39 @@ public class WebViewClientGm extends WebViewClient {
 		return GM_wv.bg.getResourceText(GM_wv.id, GM_wv.sec, resourceName);
 	}
 	function GM_xmlhttpRequest(details) {
-		var sig = '_' + Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
+		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
 		var pfx = GM_wv.hash;
-		var key, he=details, his=[];
-		function hook(n, b) {
+		var key=sig+pfx, he=details, his=unsafeWindow[key]={}, bfx='';
+		pfx = '["'+key+'"].';
+		his.ondone = function() {
+			delete unsafeWindow[key];
+			//console.log('done!!!');
+		};
+		function hook(n, d) {
+			if(d) {
+				his['d'+n] = he[n];
+				he[n] = function(res){ if(his['d'+n]) his['d'+n](res); his.ondone(); };
+			}
 			if(he[n]) {
-				key = sig + b + pfx;
-				unsafeWindow[key] = he[n];
-				he[n] = key;
-				his.push(key);
+				var b = bfx+n;
+				his[b] = he[n];
+				he[n] = pfx+b;
 			}
 		}
-		details.ondone = function() {
-			for(var i=0,he;he=his[i++];) {
-				delete unsafeWindow[he];
-			}
-		};
-		hook('ondone', 'GM_onDone');
-		hook('onabort', 'GM_onAbortCallback');
-		hook('onerror', 'GM_onErrorCallback');
-		hook('onload', 'GM_onLoadCallback');
-		hook('onprogress', 'GM_onProgressCallback');
-		hook('onreadystatechange', 'GM_onReadyStateChange');
-		hook('ontimeout', 'GM_onTimeoutCallback');
+		hook('ondone');
+		hook('onabort');
+		hook('onerror', 1);
+		hook('onload', 1);
+		hook('onprogress');
+		hook('onreadystatechange');
+		hook('ontimeout');
 		he=details.upload;
+		bfx = '';
 		if (he) {
-			hook('onabort', 'GM_uploadOnAbortCallback');
-			hook('onerror', 'GM_uploadOnErrorCallback');
-			hook('onload', 'GM_uploadOnLoadCallback');
-			hook('onprogress', 'GM_uploadOnProgressCallback');
+			hook('onabort');
+			hook('onerror', 1);
+			hook('onload', 1);
+			hook('onprogress');
 		}
 		return JSON.parse(GM_wv.bg.xmlHttpRequest(GM_wv.id, GM_wv.sec, JSON.stringify(details)));
 	}
@@ -142,6 +146,32 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_setClipboard() {
 		nonimpl('GM_setClipboard');
 	}
+	function GM_configDomain(setIfNonSet, options) {
+		return GM_wv.bg.configDomain(GM_wv.id, GM_wv.sec, setIfNonSet, options);
+	}
+	function GM_blockImage(block, reload) {
+		return GM_wv.bg.blockImage(GM_wv.id, GM_wv.sec, block, reload);
+	}
+	function GM_blockCorsJump(block) {
+		return GM_wv.bg.blockCorsJump(GM_wv.id, GM_wv.sec, block);
+	}
+	function hookCallback(cb, b) {
+		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7)
+		, pfx = GM_wv.hash
+		, key=sig+b+pfx, fn=unsafeWindow[key]=function(a,b){delete unsafeWindow[key]; if(cb)cb(a,b);};
+		return key;
+	}
+	var GM_cookie={
+		list : function(details , cb){
+			GM_wv.bg.cookieList(GM_wv.id, GM_wv.sec, JSON.stringify(details), hookCallback(cb, 'CL'));
+		}
+		, set : function(details , cb){
+			GM_wv.bg.cookieSet(GM_wv.id, GM_wv.sec, JSON.stringify(details), hookCallback(cb, 'CS'));
+		}
+		, delete : function(details , cb){
+			GM_wv.bg.cookieDelete(GM_wv.id, GM_wv.sec, JSON.stringify(details), hookCallback(cb, 'CD'));
+		}
+	};
  */
 	@Metaline()
 	private static final String JSUNSAFEWINDOW = "https://wiki.greasespot.net/Greasemonkey_Manual:API";
@@ -248,29 +278,27 @@ public class WebViewClientGm extends WebViewClient {
 					Script script = ScriptStoreSQLite.get(key);
 					buffer.setLength(0);
 					buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
-					boolean unwrap = key.hasRightUnwrap();
+					boolean unwrap = false;//key.hasRightUnwrap();
 					if (!bigcake) {
 						buffer.append("javascript:\n");
 						unwrap = false;
 					}
-					unwrap = true;
 					if (!unwrap) {
 						buffer.append(JSCONTAINERSTART);
 					}
 					buffer.append(JSUNSAFEWINDOW);
-					buffer.append("GM_wv.n=\"").append(key.getName().replace("\"", "\\\"")).append("\"");
-					buffer.append(";GM_wv.ns=\"").append(key.getNamespace().replace("\"", "\\\"")).append("\"");
-					buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
-					buffer.append(";GM_wv.id=\"").append(key.runtimeId).append("\"");
-					buffer.append(";GM_wv.sec=\"").append(key.secret).append("\"");
-					buffer.append(";GM_wv.bg=").append(jsBridgeName);
-					buffer.append(";GM_wv.hash=\"").append(("GM_"
-							+ key.getName()
-							+ key.getNamespace()
-							+ UUID.randomUUID().toString())
-							.replaceAll("[^0-9a-zA-Z_]", "")).append("\"");
-					buffer.append(";GM_wv.bg=").append(jsBridgeName)
-							.append(";").append(JSGMINFO).append("\n");
+					if (!key.hasRightNone()) {
+						key.register();
+						buffer.append("GM_wv.n=\"").append(key.getName().replace("\"", "\\\"")).append("\"");
+						buffer.append(";GM_wv.ns=\"").append(key.getNamespace().replace("\"", "\\\"")).append("\"");
+						buffer.append(";GM_wv.ver=\"").append(script.getVersion().replace("\"", "\\\"")).append("\"");
+						buffer.append(";GM_wv.id=\"").append(key.runtimeId).append("\"");
+						buffer.append(";GM_wv.sec=\"").append(key.secret).append("\"");
+						buffer.append(";GM_wv.bg=").append(jsBridgeName);
+						buffer.append(";GM_wv.hash=\"").append(key.hash).append("\"");
+						buffer.append(";GM_wv.bg=").append(jsBridgeName)
+								.append(";").append(JSGMINFO).append("\n");
+					}
 					
 					// Get @require'd scripts to inject for this script.
 					ScriptRequire[] requires = script.getRequires();
@@ -302,6 +330,22 @@ public class WebViewClientGm extends WebViewClient {
 		}
 	}
 
+   /**
+	window.external = {
+		Tampermonkey : {
+			getVersion : function(e){
+				e({version:'3.0.0', id:'infinite'})
+			}
+			, isInstalled : function(a,b,c){
+				window.isInstalledCb = c;
+				bg.isInstalled(a,b,'isInstalledCb');
+			}
+		}
+	}
+	 */
+	@Metaline
+	private static final String External = "https://github.com/Tampermonkey/tampermonkey/issues/322";
+
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		runMatchingScripts(view, url, false, null, null);
@@ -310,6 +354,9 @@ public class WebViewClientGm extends WebViewClient {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		runMatchingScripts(view, url, true, null, null);
+		if (url.startsWith("https://greasyfork.org/")) {
+			view.evaluateJavascript(External.replace("bg", jsBridgeName), null);
+		}
 	}
 
 	/**

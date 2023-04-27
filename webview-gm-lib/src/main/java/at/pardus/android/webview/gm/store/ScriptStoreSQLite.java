@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import at.pardus.android.webview.gm.BuildConfig;
 import at.pardus.android.webview.gm.model.Script;
@@ -343,24 +342,21 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	private void registerScript(ScriptCriteria key) {
 		registryMap.put(key, key);
 		key.runtimeId = registry.size();
-		key.secret = UUID.randomUUID().toString();
-		CMN.debug("registered secret::", key.secret, key);
+		CMN.debug("registered::script::", key.secret, key);
 		registry.add(key);
 	}
 	
-	public ScriptCriteria getRunningScript(String runtimeId) {
-		ScriptCriteria ret;
+	public ScriptCriteria getRunningScript(String runtimeId, String secret) {
 		try {
 			int id = Integer.parseInt(runtimeId);
-			ret = registry.get(id);
+			ScriptCriteria ret = registry.get(id);
+			if (ret.isEnabled() && ret.secret.equals(secret)) {
+				return ret;
+			}
 		} catch (Exception e) {
 			CMN.debug(e);
-			ret = ScriptCriteria.EmptyInstance;
 		}
-		if (!ret.isEnabled()) {
-			return null;
-		}
-		return ret;
+		return null;
 	}
 	
 	/**
@@ -665,7 +661,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				int unwrap = 0;
 				String version = cursor.getString(cc++);
 				boolean bEnable = cursor.getInt(cc++)!=0;
-				int rights = cursor.getInt(cc++);
+				long rights = cursor.getLong(cc++);
 				String content;
 				ScriptRequire[] requireArr;
 				ScriptResource[] resourceArr = null;
@@ -699,7 +695,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				String name = cursor.getString(0);
 				String namespace = cursor.getString(1);
 				boolean enable_ = cursor.getInt(3)==1;
-				int rights = cursor.getInt(4);
+				long rights = cursor.getLong(4);
 				ret = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
 			}
 			cursor.close();
@@ -760,7 +756,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					String name = cursor.getString(0);
 					String namespace = cursor.getString(1);
 					boolean enable_ = cursor.getInt(3)==1;
-					int rights = cursor.getInt(4);
+					long rights = cursor.getLong(4);
 					ScriptCriteria tmp = new ScriptCriteria(name, namespace, cursor.getString(2).split("\n\0"), enable_, rights);
 					ScriptCriteria stored = init?null:scriptStore.registryMap.get(tmp);
 					if (stored == null) {
@@ -1080,8 +1076,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		public void deleteScript(ScriptId id) {
 			db.beginTransaction();
 			try {
-				db.delete(TBL_SCRIPT, COL_NAME + " = ? AND " + COL_NAMESPACE
-						+ " = ?",
+				db.delete(TBL_SCRIPT, COL_NAME + " = ? AND " + COL_NAMESPACE + " = ?",
 						new String[] { id.getName(), id.getNamespace() });
 				db.setTransactionSuccessful();
 			} finally {

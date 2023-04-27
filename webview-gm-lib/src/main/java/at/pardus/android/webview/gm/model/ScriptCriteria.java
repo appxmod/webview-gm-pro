@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import org.knziha.metaline.Metaline;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import at.pardus.android.webview.gm.store.CMN;
 import at.pardus.android.webview.gm.util.CriterionMatcher;
@@ -32,20 +33,21 @@ import at.pardus.android.webview.gm.util.CriterionMatcher;
  */
 public class ScriptCriteria extends ScriptId {
 	private String[] match;
+	private String[] connect;
 	protected boolean enabled;
 	public long rights;
 	public String secret;
 	public int runtimeId;
+	public String hash;
+	public long rowID;
 	
-	public static ScriptCriteria EmptyInstance = new ScriptCriteria("","",null,false,0);
-
 	public ScriptCriteria(String name, String namespace, String[] match) {
 		super(name, namespace);
 		this.match = match;
 		this.enabled = true;
 	}
 	
-	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable, int rights) {
+	public ScriptCriteria(String name, String namespace, String[] match, boolean bEnable, long rights) {
 		super(name, namespace);
 		this.match = match;
 		this.enabled = bEnable;
@@ -121,8 +123,8 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=12) public boolean hasRightListValues(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=13) public void hasRightAddStyle(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=13) public boolean hasRightAddStyle(){ rights|=Z; throw new RuntimeException(); }
-//	@Metaline(flagPos=14) public void hasRightOpenInTab(boolean val){ rights|=Z; throw new RuntimeException(); }
-//	@Metaline(flagPos=14) public boolean hasRightOpenInTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=14) public void hasRightCookie(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=14) public boolean hasRightCookie(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=15) public void hasRightInfo(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=15) public boolean hasRightInfo(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=16) public void hasRightNotification(boolean val){ rights|=Z; throw new RuntimeException(); }
@@ -158,13 +160,37 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=30) public boolean hasRightRequire(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=31) public void hasRightLog(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=31) public boolean hasRightLog(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=31) public void hasRightNone(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=31) public boolean hasRightNone(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=32) public void hasRightSetTab(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=32) public boolean hasRightSetTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=33) public void hasRightGetTab(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=33) public boolean hasRightGetTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=34) public void hasRightGetTabs(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=34) public boolean hasRightGetTabs(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=35) public void hasRightSaveTab(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=35) public boolean hasRightSaveTab(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=36) public void hasRightBlockImage(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=36) public boolean hasRightBlockImage(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=37) public void hasRightBlockCorsJump(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=37) public boolean hasRightBlockCorsJump(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;
 		this.namespace = null;
 		this.secret = null;
 		this.match = null;
+		this.hash = null;
 		this.enabled = false;
 		this.rights = 0;
+	}
+	
+	public void register() {
+		if (secret==null) {
+			hash = (name+namespace).replaceAll("[^0-9a-zA-Z_]", "");
+			secret = UUID.randomUUID().toString();
+			CMN.debug("registered::secret::", runtimeId, secret, hash, this);
+			// todo retrieve connects on the run
+		}
 	}
 }

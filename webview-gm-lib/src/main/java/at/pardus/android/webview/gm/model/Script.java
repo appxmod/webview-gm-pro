@@ -206,6 +206,28 @@ public class Script extends ScriptMetadata {
 							case "GM_log":
 								tmp.hasRightLog(true);
 							break;
+							case "none":
+								tmp.hasRightNone(true);
+							break;
+							case "GM_cookie":
+								tmp.hasRightCookie(true);
+							break;
+							case "GM_getTab":
+								tmp.hasRightGetTab(true);
+							break;
+							case "GM_saveTab":
+								tmp.hasRightSaveTab(true);
+							break;
+							case "GM_getTabs":
+								tmp.hasRightGetTabs(true);
+							break;
+							case "GM_blockImage":
+								tmp.hasRightBlockImage(true);
+								CMN.debug("GM_blockImage::", tmp.hasRightBlockImage());
+							break;
+							case "GM_blockCorsJump":
+								tmp.hasRightBlockCorsJump(true);
+							break;
 //							default:
 //								CMN.debug("!!!GM_xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
 //							break;

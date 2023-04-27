@@ -23,7 +23,6 @@ package at.pardus.android.webview.gm.model;
  * @see <a href="http://wiki.greasespot.net/Metadata_Block">Metadata Block</a>
  */
 public class ScriptId {
-	public long rowID;
 	protected String name;
 	protected String namespace;
 

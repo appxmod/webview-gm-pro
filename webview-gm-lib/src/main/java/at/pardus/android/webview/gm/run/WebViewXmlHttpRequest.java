@@ -358,7 +358,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ this.onError + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -370,11 +370,11 @@ public class WebViewXmlHttpRequest {
 		if (this.onLoad.equals("")) {
 			return;
 		}
-		CMN.debug("executeOnLoadCallback::", "javascript: (function() { unsafeWindow."
+		CMN.debug("executeOnLoadCallback::", "javascript: (function() { unsafeWindow"
 				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
 				+ ")); console.log('loaded::',"+url+")})()");
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
 				+ ")); console.log('loaded::',\""+url+"\")})()");
 	}
@@ -384,7 +384,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ this.onProgress + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -395,7 +395,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 		
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ this.onReadyStateChange + "(JSON.parse("
 				+ response.toJSONString() + ")); })()");
 	}
@@ -405,7 +405,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ this.onTimeout + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -415,7 +415,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ getUploadOnError() + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -425,7 +425,7 @@ public class WebViewXmlHttpRequest {
             return;
         }
 		
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow."
+		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
 				+ getUploadOnLoad() + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
