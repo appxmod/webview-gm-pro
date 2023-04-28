@@ -397,7 +397,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final int DB_SCHEMA_VERSION_4 = 4;
 		private static final int DB_SCHEMA_VERSION_3 = 3;
 		private static final int DB_SCHEMA_VERSION_2 = 2;
-		private static final int DB_VERSION = 11;
+		private static final int DB_VERSION = 12;
 
 		private static final String DB = "webviewgm";
 
@@ -417,6 +417,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String COL_RIGHTS = "rights";
 		private static final String COL_TIME = "time";
 		private static final String COL_EXTERNALS = "exts";
+		private static final String COL_NAME_LOCAL = "name_loc";
 		private static final String TBL_SCRIPT_CREATE = "CREATE TABLE "
 				+ TBL_SCRIPT + " (" + COL_NAME + " TEXT NOT NULL" + ", "
 				+ COL_NAMESPACE + " TEXT NOT NULL" + ", " + COL_DESCRIPTION
@@ -429,6 +430,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 				+ COL_RIGHTS + " INTEGER NOT NULL DEFAULT 0" + ", "
 				+ COL_TIME + " INTEGER NOT NULL DEFAULT 0" + ", "
 				+ COL_EXTERNALS + " INTEGER NOT NULL DEFAULT 0" + ", "
+				+ COL_NAME_LOCAL + " TEXT" + ", "
 				+ "PRIMARY KEY (" + COL_NAME + ", " + COL_NAMESPACE + "));";
 
 //		private static final String COL_PATTERN = "pattern";
@@ -602,6 +604,10 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
 					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
 					if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
+				}
+				if (v == 11)
+				{
+					if(!columnExists(db, TBL_SCRIPT, COL_NAME_LOCAL)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_NAME_LOCAL+" TEXT");
 				}
 			}
 		}
