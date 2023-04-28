@@ -184,7 +184,7 @@ public class WebViewClientGm extends WebViewClient {
 			, version: GM_wv.ver
 		}
 		, scriptMetaStr: GM_wv.meta
-		, scriptHandler: 'webview-gm'
+		, scriptHandler: 'android-webview-gm'
 		, version: 'infinite'
 	};*/
 	@Metaline()
@@ -196,7 +196,7 @@ public class WebViewClientGm extends WebViewClient {
 //			+ "var GM_unregisterMenuCommand = " + JSMISSINGFUNCTION
 //			+ "var GM_setClipboard = " + JSMISSINGFUNCTION;
 
-	private ScriptStoreSQLite ScriptStoreSQLite;
+	private ScriptStoreSQLite scriptStore;
 
 	private String jsBridgeName;
 
@@ -207,9 +207,9 @@ public class WebViewClientGm extends WebViewClient {
 	private final  LinkedHashMap<ScriptCriteria, String> bufferScript ;
 	
 	/**
-	 * Constructs a new WebViewClientGm with a ScriptStoreSQLite.
+	 * Constructs a new WebViewClientGm with a scriptStore.
 	 *
-	 * @param ScriptStoreSQLite
+	 * @param scriptStore
 	 *            the script database to query for scripts to run when a page
 	 *            starts/finishes loading
 	 * @param jsBridgeName
@@ -218,13 +218,13 @@ public class WebViewClientGm extends WebViewClient {
 	 * @param secret
 	 *            a random string that is added to calls of the GM API
 	 */
-	public WebViewClientGm(ScriptStoreSQLite ScriptStoreSQLite, String jsBridgeName,
+	public WebViewClientGm(ScriptStoreSQLite scriptStore, String jsBridgeName,
 			String secret) {
-		this.ScriptStoreSQLite = ScriptStoreSQLite;
+		this.scriptStore = scriptStore;
 		this.jsBridgeName = jsBridgeName;
 		this.secret = secret;
-		buffer = ScriptStoreSQLite.buffer;
-		bufferScript = ScriptStoreSQLite.bufferedScript;
+		buffer = scriptStore.buffer;
+		bufferScript = scriptStore.bufferedScript;
 	}
 	
 	/**
@@ -251,11 +251,11 @@ public class WebViewClientGm extends WebViewClient {
 	 */
 	protected void runMatchingScripts(WebView view, String url,
 			boolean pageFinished, String jsBeforeScript, String jsAfterScript) {
-		if (ScriptStoreSQLite == null) {
+		if (scriptStore == null) {
 			Log.w(TAG, "Property ScriptStoreSQLite is null - not running any scripts");
 			return;
 		}
-		ScriptCriteria[] matchingScripts = ScriptStoreSQLite.get(url, true, false);
+		ScriptCriteria[] matchingScripts = scriptStore.get(url, true, false);
 		CMN.debug("matchingScripts::", Arrays.toString(matchingScripts));
 		if (matchingScripts == null) {
 			return;
@@ -272,7 +272,7 @@ public class WebViewClientGm extends WebViewClient {
 				Log.i(TAG, "Running script \"" + key + "\" on " + url);
 				String jsCode = bufferScript.get(key);
 				if (jsCode == null) {
-					Script script = ScriptStoreSQLite.get(key);
+					Script script = scriptStore.get(key);
 					buffer.setLength(0);
 					buffer.ensureCapacity(JSUNSAFEWINDOW.length()*3+script.getContent().length());
 					boolean unwrap = false;//key.hasRightUnwrap();
@@ -340,16 +340,16 @@ public class WebViewClientGm extends WebViewClient {
 	/**
 	 * @return the ScriptStoreSQLite
 	 */
-	public ScriptStoreSQLite getScriptStoreSQLite() {
-		return ScriptStoreSQLite;
+	public ScriptStoreSQLite getScriptStore() {
+		return scriptStore;
 	}
 
 	/**
-	 * @param ScriptStoreSQLite
-	 *            the ScriptStoreSQLite to set
+	 * @param scriptStore
+	 *            the scriptStore to set
 	 */
-	public void setScriptStoreSQLite(ScriptStoreSQLite ScriptStoreSQLite) {
-		this.ScriptStoreSQLite = ScriptStoreSQLite;
+	public void setScriptStore(ScriptStoreSQLite scriptStore) {
+		this.scriptStore = scriptStore;
 	}
 
 	/**

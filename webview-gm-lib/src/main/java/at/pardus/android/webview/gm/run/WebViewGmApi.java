@@ -38,21 +38,21 @@ public class WebViewGmApi {
 
 	private WebView view;
 
-	private ScriptStoreSQLite ScriptStoreSQLite;
+	private ScriptStoreSQLite scriptStore;
 
 	//private String secret;
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param ScriptStoreSQLite
+	 * @param scriptStore
 	 *            the database to query for values
 	 * @param secret
 	 *            the secret string to compare in each call
 	 */
-	public WebViewGmApi(WebView view, ScriptStoreSQLite ScriptStoreSQLite, String secret) {
+	public WebViewGmApi(WebView view, ScriptStoreSQLite scriptStore, String secret) {
 		this.view = view;
-		this.ScriptStoreSQLite = ScriptStoreSQLite;
+		this.scriptStore = scriptStore;
 		//this.secret = secret;
 	}
 
@@ -71,9 +71,9 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String listValues(String runtimeId, String secret) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightListValues()) {
-			String[] values = ScriptStoreSQLite.getValueNames(script);
+			String[] values = scriptStore.getValueNames(script);
 			if (values == null || values.length == 0) {
 				return "";
 			}
@@ -107,9 +107,9 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String getValue(String runtimeId, String secret, String name) {
 		//CMN.debug("getValue::", runtimeId, secret, ScriptStoreSQLite.getRunningScript(runtimeId));
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightGetValue()) {
-			String v = ScriptStoreSQLite.getValue(script, name);
+			String v = scriptStore.getValue(script, name);
 			//CMN.debug("getValue::", name, v);
 			return v;
 		}
@@ -133,10 +133,10 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void setValue(String runtimeId, String secret, String name, String value) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightSetValue()) {
 			//CMN.debug("setValue::", name, value==null?-1:value.length(), value);
-			ScriptStoreSQLite.setValue(script, name, value);
+			scriptStore.setValue(script, name, value);
 		}
 	}
 
@@ -155,9 +155,9 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void deleteValue(String runtimeId, String secret, String name) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightDeleteValue()) {
-			ScriptStoreSQLite.deleteValue(script, name);
+			scriptStore.deleteValue(script, name);
 		}
 	}
 
@@ -176,9 +176,9 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public void log(String runtimeId, String secret, String message) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightLog()) {
-			Log.i("webview-gm", script.getName() + ", " + script.getNamespace() + ": " + message);
+			Log.i(script.getName(), message);
 		}
 	}
 
@@ -198,10 +198,10 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String getResourceURL(String runtimeId, String secret, String resourceName) {
 		CMN.debug("getResourceURL::", resourceName);
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightResource()) {
 			try {
-				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
+				ScriptResource resource = scriptStore.getResources(script, resourceName);
 				if (resource != null) {
 					return resource.getJavascriptUrl(); // todo safety
 				}
@@ -229,10 +229,10 @@ public class WebViewGmApi {
 	 */
     @JavascriptInterface
 	public String getResourceText(String runtimeId, String secret, String resourceName) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script!=null && script.hasRightResource()) {
 			try {
-				ScriptResource resource = ScriptStoreSQLite.getResources(script, resourceName);
+				ScriptResource resource = scriptStore.getResources(script, resourceName);
 				if (resource != null) {
 					return resource.getJavascriptString();
 				}
@@ -259,7 +259,7 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String xmlHttpRequest(String runtimeId, String secret, String jsonRequestString) {
 		try {
-			ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+			ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 			if (script != null) {
 				CMN.debug("xmlHttpRequest::", script.hasRightXmlHttpRequest(), script);
 				if (script.hasRightXmlHttpRequest()) {
@@ -315,7 +315,7 @@ public class WebViewGmApi {
 	// https://github.com/Tampermonkey/tampermonkey/issues/465
     @JavascriptInterface
 	public String cookieList(String runtimeId, String secret, String details, String callback) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if (script==null || !script.secret.equals(secret)) {
 			Log.e(TAG,
 					"Call to \"xmlHttpRequest\" did not supply correct secret");
@@ -373,7 +373,7 @@ public class WebViewGmApi {
 	
     @JavascriptInterface
 	public void blockImage(String runtimeId, String secret, boolean block, boolean reload) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if(script!=null && script.hasRightBlockImage()) {
 		
 		}
@@ -381,7 +381,7 @@ public class WebViewGmApi {
 	
     @JavascriptInterface
 	public void blockCorsJump(String runtimeId, String secret, boolean block) {
-		ScriptCriteria script = ScriptStoreSQLite.getRunningScript(runtimeId, secret);
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if(script!=null && script.hasRightBlockCorsJump()) {
 		
 		}

@@ -35,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import at.pardus.android.webview.gm.BuildConfig;
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptCriteria;
 import at.pardus.android.webview.gm.model.ScriptId;
@@ -72,7 +71,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	public final HashMap<ScriptCriteria, ScriptCriteria> registryMap = new HashMap<>(1024);
 	public final ArrayList<ScriptCriteria> registry = new ArrayList<>(1024);
 	
-	final static boolean debug = true || BuildConfig.DEBUG;
+	final static boolean debug = false;
 
 	// @Override
 	public ScriptCriteria[] get(String url, boolean enabled, boolean metaOnly) {
@@ -249,13 +248,13 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 	 * 
 	 * Synchronized since this method should not be run on the UI thread.
 	 */
-	public synchronized void open() {
-		if (dbHelper != null) {
-			return;
-		}
-		dbHelper = new ScriptDbHelper(this);
-		initCache();
-	}
+//	public synchronized void open() {
+//		if (dbHelper != null) {
+//			return;
+//		}
+//		dbHelper = new ScriptDbHelper(this);
+//		initCache();
+//	}
 
 	public synchronized void open(String name) {
 		if (dbHelper != null) {
@@ -398,8 +397,6 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final int DB_SCHEMA_VERSION_3 = 3;
 		private static final int DB_SCHEMA_VERSION_2 = 2;
 		private static final int DB_VERSION = 12;
-
-		private static final String DB = "webviewgm";
 
 		private static final String TBL_SCRIPT = "script";
 		private static final String COL_NAME = "name";
@@ -553,12 +550,12 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private SQLiteDatabase db;
 		private final ScriptStoreSQLite scriptStore;
 
-		public ScriptDbHelper(ScriptStoreSQLite scriptStore) {
-			super(scriptStore.context, DB, null, DB_VERSION);
-			this.scriptStore = scriptStore;
-			db = getWritableDatabase();
-			db.execSQL("PRAGMA foreign_keys = ON;");
-		}
+//		public ScriptDbHelper(ScriptStoreSQLite scriptStore) {
+//			super(scriptStore.context, DB, null, DB_VERSION);
+//			this.scriptStore = scriptStore;
+//			db = getWritableDatabase();
+//			db.execSQL("PRAGMA foreign_keys = ON;");
+//		}
 		
 		public ScriptDbHelper(ScriptStoreSQLite scriptStore, String pathName) {
 			super(scriptStore.context, pathName, null, DB_VERSION);
@@ -578,38 +575,37 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 
 		// @Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.i(TAG, "Upgrading database " + DB + " from version "
-					+ oldVersion + " to " + newVersion);
-			for (int v = oldVersion; v <= newVersion; v++) {
-				if (v == DB_SCHEMA_VERSION_2) {
-					db.execSQL(TBL_REQUIRE_CREATE);
-					db.execSQL(TBL_RESOURCE_CREATE);
-				}
-				if (v == DB_SCHEMA_VERSION_2 && oldVersion==v) {
-					db.execSQL("DROP TABLE IF EXISTS "+TBL_MATCH);
-					db.execSQL(TBL_MATCH_CREATE);
-				}
-				if (v == DB_SCHEMA_VERSION_4) {
-					if(!columnExists(db, TBL_SCRIPT, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
-					if(!columnExists(db, TBL_MATCH, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
-				}
-				if (v == 7)
-				{
-					if(!columnExists(db, TBL_MATCH, COL_VERSION)) {
-						CMN.debug("ADD COLUMN COL_VERSION");
-						db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_VERSION+" TEXT DEFAULT NULL");
-					}
-					if(!columnExists(db, TBL_MATCH, COL_CONNECT))  db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_CONNECT+" TEXT DEFAULT NULL");
-					if(!columnExists(db, TBL_MATCH, COL_USER_CONNECT)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_USER_CONNECT+" TEXT DEFAULT NULL");
-					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
-					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
-					if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
-				}
-				if (v == 11)
-				{
-					if(!columnExists(db, TBL_SCRIPT, COL_NAME_LOCAL)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_NAME_LOCAL+" TEXT");
-				}
-			}
+			CMN.Log(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+//			for (int v = oldVersion; v <= newVersion; v++) {
+//				if (v == DB_SCHEMA_VERSION_2) {
+//					db.execSQL(TBL_REQUIRE_CREATE);
+//					db.execSQL(TBL_RESOURCE_CREATE);
+//				}
+//				if (v == DB_SCHEMA_VERSION_2 && oldVersion==v) {
+//					db.execSQL("DROP TABLE IF EXISTS "+TBL_MATCH);
+//					db.execSQL(TBL_MATCH_CREATE);
+//				}
+//				if (v == DB_SCHEMA_VERSION_4) {
+//					if(!columnExists(db, TBL_SCRIPT, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
+//					if(!columnExists(db, TBL_MATCH, COL_RIGHTS)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_RIGHTS+" INTEGER DEFAULT 0 NOT NULL");
+//				}
+//				if (v == 7)
+//				{
+//					if(!columnExists(db, TBL_MATCH, COL_VERSION)) {
+//						CMN.debug("ADD COLUMN COL_VERSION");
+//						db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_VERSION+" TEXT DEFAULT NULL");
+//					}
+//					if(!columnExists(db, TBL_MATCH, COL_CONNECT))  db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_CONNECT+" TEXT DEFAULT NULL");
+//					if(!columnExists(db, TBL_MATCH, COL_USER_CONNECT)) db.execSQL("ALTER TABLE "+TBL_MATCH+" ADD COLUMN "+COL_USER_CONNECT+" TEXT DEFAULT NULL");
+//					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
+//					if(!columnExists(db, TBL_SCRIPT, COL_TIME)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_TIME+" INTEGER NOT NULL DEFAULT 0");
+//					if(!columnExists(db, TBL_SCRIPT, COL_EXTERNALS)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_EXTERNALS+" INTEGER NOT NULL DEFAULT 0");
+//				}
+//				if (v == 11)
+//				{
+//					if(!columnExists(db, TBL_SCRIPT, COL_NAME_LOCAL)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_NAME_LOCAL+" TEXT");
+//				}
+//			}
 		}
 		
 		private static boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {

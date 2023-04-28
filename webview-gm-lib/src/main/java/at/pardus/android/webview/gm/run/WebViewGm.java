@@ -36,22 +36,22 @@ public class WebViewGm extends WebView {
 
 	private static final String JSBRIDGENAME = "WebViewGM";
 
-	private ScriptStoreSQLite ScriptStoreSQLite;
+	private ScriptStoreSQLite scriptStore;
 
 	private WebViewClientGm webViewClient;
 
 	/**
-	 * Constructs a new WebViewGm initializing it with a ScriptStoreSQLite.
+	 * Constructs a new WebViewGm initializing it with a scriptStore.
 	 * 
 	 * @param context
 	 *            the application's context
-	 * @param ScriptStoreSQLite
+	 * @param scriptStore
 	 *            the script database to use
 	 */
-	public WebViewGm(Context context, ScriptStoreSQLite ScriptStoreSQLite) {
+	public WebViewGm(Context context, ScriptStoreSQLite scriptStore) {
 		super(context);
 		init();
-		setScriptStoreSQLite(ScriptStoreSQLite);
+		setScriptStore(scriptStore);
 	}
 
 	/**
@@ -100,7 +100,7 @@ public class WebViewGm extends WebView {
 	private void init() {
 		WebSettings settings = getSettings();
 		settings.setJavaScriptEnabled(true);
-		webViewClient = new WebViewClientGm(ScriptStoreSQLite, JSBRIDGENAME,
+		webViewClient = new WebViewClientGm(scriptStore, JSBRIDGENAME,
 				generateSecret());
 		setWebViewClient(webViewClient);
 	}
@@ -108,20 +108,20 @@ public class WebViewGm extends WebView {
 	/**
 	 * @return the ScriptStoreSQLite
 	 */
-	public ScriptStoreSQLite getScriptStoreSQLite() {
-		return ScriptStoreSQLite;
+	public ScriptStoreSQLite getScriptStore() {
+		return scriptStore;
 	}
 
 	/**
-	 * @param ScriptStoreSQLite
-	 *            the ScriptStoreSQLite to set
+	 * @param scriptStore
+	 *            the scriptStore to set
 	 */
     @SuppressLint("AddJavascriptInterface")
-    public void setScriptStoreSQLite(ScriptStoreSQLite ScriptStoreSQLite) {
-		this.ScriptStoreSQLite = ScriptStoreSQLite;
-		addJavascriptInterface(new WebViewGmApi(this, ScriptStoreSQLite,
+    public void setScriptStore(ScriptStoreSQLite scriptStore) {
+		this.scriptStore = scriptStore;
+		addJavascriptInterface(new WebViewGmApi(this, scriptStore,
 				webViewClient.getSecret()), JSBRIDGENAME);
-		webViewClient.setScriptStoreSQLite(ScriptStoreSQLite);
+		webViewClient.setScriptStore(scriptStore);
 	}
 
 	/**
