@@ -178,6 +178,8 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=36) public boolean hasRightBlockImage(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=37) public void hasRightBlockCorsJump(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=37) public boolean hasRightBlockCorsJump(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=38) public void hasRightBlockJS(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=38) public boolean hasRightBlockJS(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;

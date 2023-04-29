@@ -153,8 +153,14 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_blockImage(block, reload) {
 		return GM_wv.bg.blockImage(GM_wv.id, GM_wv.sec, block, reload);
 	}
+	function GM_block(substr, pattern, block) {
+		return GM_wv.bg.block(GM_wv.id, GM_wv.sec, substr, pattern, block);
+	}
 	function GM_blockCorsJump(block) {
 		return GM_wv.bg.blockCorsJump(GM_wv.id, GM_wv.sec, block);
+	}
+	function GM_blockJS(block) {
+		return GM_wv.bg.blockJS(GM_wv.id, GM_wv.sec, block);
 	}
 	function hookCallback(cb, b) {
 		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7)
@@ -268,7 +274,7 @@ public class WebViewClientGm extends WebViewClient {
 		}
 		for (ScriptCriteria key : matchingScripts) {
 			//CMN.debug("hasRightRunStart::", key, key.hasRightRunStart(), key.hasRightRunEnd());
-			if (!pageFinished && key.hasRightRunStart() || pageFinished && key.hasRightRunEnd()) {
+			if (key.isEnabled() && (!pageFinished && key.hasRightRunStart() || pageFinished && key.hasRightRunEnd())) {
 				Log.i(TAG, "Running script \"" + key + "\" on " + url);
 				String jsCode = bufferScript.get(key);
 				if (jsCode == null) {

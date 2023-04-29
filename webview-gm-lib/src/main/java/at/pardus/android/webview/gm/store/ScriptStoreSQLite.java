@@ -436,7 +436,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		
 		private static final String TBL_MATCH = TBL_SCRIPT + "_has_match";
 		private static final String COL_CONNECT = "connect";
-		private static final String COL_USER_CONNECT = "version";
+		private static final String COL_USER_CONNECT = "usr_connect";
 		private static final String TBL_MATCH_CREATE = "CREATE TABLE "
 				+ TBL_MATCH + " (" + COL_NAME + " TEXT NOT NULL" + ", "
 				+ COL_NAMESPACE + " TEXT NOT NULL"
@@ -812,6 +812,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						stored.setEnabled(tmp.isEnabled());
 						tmp = stored;
 					}
+					//CMN.debug("enable_::", enable_, tmp);
 				}
 				cursor.close();
 				if(debug) {
@@ -1154,6 +1155,9 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			db.beginTransaction();
 			try {
 				db.update(TBL_SCRIPT, fields, COL_NAME + " = ? AND "
+						+ COL_NAMESPACE + " = ?", new String[] { id.getName(),
+						id.getNamespace() });
+				db.update(TBL_MATCH, fields, COL_NAME + " = ? AND "
 						+ COL_NAMESPACE + " = ?", new String[] { id.getName(),
 						id.getNamespace() });
 				db.setTransactionSuccessful();

@@ -39,9 +39,9 @@ public class ScriptMetadata extends ScriptCriteria {
 
 	private String runAt;
 
-	private ScriptRequire[] requires;
-
-	private ScriptResource[] resources;
+	protected ScriptRequire[] requires;
+	
+	protected ScriptResource[] resources;
 
 	private boolean unwrap;
 

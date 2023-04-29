@@ -380,6 +380,14 @@ public class WebViewGmApi {
 	}
 	
     @JavascriptInterface
+	public void block(String runtimeId, String secret, String substr, String pattern, boolean block) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightBlockImage()) {
+		
+		}
+	}
+	
+    @JavascriptInterface
 	public void blockCorsJump(String runtimeId, String secret, boolean block) {
 		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if(script!=null && script.hasRightBlockCorsJump()) {

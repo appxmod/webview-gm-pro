@@ -48,7 +48,15 @@ public class Script extends ScriptMetadata {
 		this.rights = rights;
 		this.connect = connect;
 	}
-
+	
+	public Script toMetadata(){
+		content = null;
+		setMatch(null);
+		requires = null;
+		resources = null;
+		return this;
+	}
+	
 	public String getContent() {
 		return content;
 	}
@@ -229,6 +237,9 @@ public class Script extends ScriptMetadata {
 							break;
 							case "GM_blockCorsJump":
 								tmp.hasRightBlockCorsJump(true);
+							break;
+							case "GM_blockJS":
+								tmp.hasRightBlockJS(true);
 							break;
 //							default:
 //								CMN.debug("!!!GM_xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
