@@ -16,6 +16,8 @@
 
 package at.pardus.android.webview.gm.util;
 
+import at.pardus.android.webview.gm.store.CMN;
+
 /**
  * Class offering static functions to compare a script's exclude/include/match
  * criteria with a URL.
@@ -34,18 +36,75 @@ public class CriterionMatcher {
 	 * @see <tt><a href="http://wiki.greasespot.net/Include_and_exclude_rules">Rules</a></tt>
 	 * @see <tt><a href="http://code.google.com/chrome/extensions/match_patterns.html">Match Syntax</a></tt>
 	 */
-	public static boolean test(String criterion, String url) {
+	public static boolean test(String criterion, String url, boolean match) {
 		if (criterion.length() == 0) {
 			return true;
 		}
 		criterion = criterion.toLowerCase();
 		url = url.toLowerCase();
-		if (isRegExp(criterion)) {
-			return url.matches(".*" + convertJsRegExp(criterion) + ".*");
+		if (match) {
+			return matchPattern(criterion, url);
+		} else {
+			if (isRegExp(criterion)) {
+				return url.matches(".*" + convertJsRegExp(criterion) + ".*");
+			}
+			return testGlob(criterion, url);
 		}
-		return testGlob(criterion, url);
+		//CMN.debug("testGlob", "pattern = [" + criterion + "], url = [" + url + "]", testGlob(criterion, url));
 	}
-
+	
+	
+	
+	/** https://www.dre.vanderbilt.edu/~schmidt/android/android-4.0/external/chromium/chrome/common/extensions/docs/match_patterns.html */
+	public static boolean matchPattern(String pattern, String url) {
+		int schemaIdx_pattern = pattern.indexOf("://");
+		int schemaIdx_url = url.indexOf("://");
+		if (schemaIdx_pattern>0 && schemaIdx_url>0
+				&& (pattern.charAt(0)=='*' || schemaIdx_pattern==schemaIdx_url && url.regionMatches(0, pattern, 0, schemaIdx_pattern) )) {
+			// <scheme> := '*' | 'http' | 'https' | 'file' | 'ftp'
+			int pathIdx_pattern = pattern.indexOf("/", schemaIdx_pattern+4);
+			int pathIdx_url = url.indexOf("/", schemaIdx_url+4);
+			int pathPatttern = pathIdx_pattern > 0 ? pathIdx_pattern : pattern.length();
+			int pathUrl = pathIdx_url > 0 ? pathIdx_url : url.length();
+			boolean matchHost = pattern.charAt(schemaIdx_pattern+3)=='*';
+			if(pathPatttern < schemaIdx_pattern+4) { // sanity check
+				return false;
+			} else if (pathPatttern==schemaIdx_pattern+4) { // 如果 pattern 的 host 只有一个字符
+				// matchHost = true;
+			} else if (matchHost) {
+				matchHost = pattern.charAt(schemaIdx_pattern+4)=='.'; // 如果起始为 *.
+				if (matchHost) {
+					// *.org also matches greasyfork.org
+					matchHost = url.regionMatches(schemaIdx_url+3, pattern, schemaIdx_pattern+5, pathPatttern - (schemaIdx_pattern+5));
+					if (!matchHost) {
+						int skipSubDomainIdx = url.indexOf(".", schemaIdx_url+3);
+						matchHost = url.regionMatches(skipSubDomainIdx, pattern, schemaIdx_pattern+4, pathPatttern - (schemaIdx_pattern+4));
+					}
+				}
+			} else if(pathUrl-schemaIdx_url==pathPatttern-schemaIdx_pattern) {
+				matchHost = url.regionMatches(schemaIdx_url+3, pattern, schemaIdx_pattern+3, pathPatttern - (schemaIdx_pattern+3));
+			}
+			if (matchHost) {
+				//System.out.println("matchHost::"+pathIdx_pattern+" "+ pathIdx_url);
+				if (pathIdx_pattern > 0 && pathIdx_url > 0) {
+					//System.out.println("matchHost::"+" "+url.substring(pathIdx_url)+" "+pattern.substring(pathIdx_pattern));
+					boolean matchPath;
+					if (pattern.length() <= pathIdx_pattern + 2) {
+						// matchPath = true;
+						matchPath = pattern.length() < pathIdx_pattern + 2 || pattern.charAt(pathIdx_pattern + 1) == '*';
+					} else {
+						matchPath = testGlob(pattern, pathIdx_pattern + 2, url, pathIdx_url + 2);
+						//System.out.println("testGlob::"+" "+ matchPath);
+					}
+					return matchPath;
+				} else {
+					return pathIdx_pattern < 0 || pattern.length() < pathIdx_pattern + 2 || pattern.charAt(pathIdx_pattern + 1) == '*';
+				}
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Tests a string against a glob-type pattern (supporting only * and the
 	 * escape character \).
@@ -75,7 +134,7 @@ public class CriterionMatcher {
 	 * @return true if the string from the given index to its end matches the
 	 *         pattern from the given index to its end, false else
 	 */
-	private static boolean testGlob(String pattern, int pInd, String str,
+	public static boolean testGlob(String pattern, int pInd, String str,
 			int sInd) {
 		int pLen = pattern.length();
 		int sLen = str.length();
@@ -137,7 +196,7 @@ public class CriterionMatcher {
 	 * @return true if the string starts with a / and ends with another /
 	 */
 	private static boolean isRegExp(String str) {
-		return str.length() >= 2 && str.startsWith("/") && str.endsWith("/");
+		return str.length() >= 2 && str.charAt(0)=='/' && str.endsWith("/");
 	}
 
 	/**

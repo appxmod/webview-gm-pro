@@ -275,7 +275,7 @@ public class WebViewClientGm extends WebViewClient {
 		for (ScriptCriteria key : matchingScripts) {
 			//CMN.debug("hasRightRunStart::", key, key.hasRightRunStart(), key.hasRightRunEnd());
 			if (key.isEnabled() && (!pageFinished && key.hasRightRunStart() || pageFinished && key.hasRightRunEnd())) {
-				Log.i(TAG, "Running script \"" + key + "\" on " + url);
+				//Log.i(TAG, "Running script \"" + key + "\" on " + url);
 				String jsCode = bufferScript.get(key);
 				if (jsCode == null) {
 					Script script = scriptStore.get(key);

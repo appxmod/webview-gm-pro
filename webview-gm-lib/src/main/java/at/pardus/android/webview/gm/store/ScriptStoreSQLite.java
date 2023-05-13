@@ -575,7 +575,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 
 		// @Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			CMN.Log(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+			CMN.debug(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
 //			for (int v = oldVersion; v <= newVersion; v++) {
 //				if (v == DB_SCHEMA_VERSION_2) {
 //					db.execSQL(TBL_REQUIRE_CREATE);
@@ -681,7 +681,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 					, null, null, null);
 			
 			Script[] scriptsArr = new Script[cursor.getCount()];
-			CMN.debug("selectScripts::", scriptsArr.length, selectionStr, selectionArgsArr);
+			//CMN.debug("selectScripts::", scriptsArr.length, selectionStr, selectionArgsArr);
 			
 			int i = 0;
 			while (cursor.moveToNext()) {

@@ -316,9 +316,7 @@ public class WebViewGmApi {
     @JavascriptInterface
 	public String cookieList(String runtimeId, String secret, String details, String callback) {
 		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
-		if (script==null || !script.secret.equals(secret)) {
-			Log.e(TAG,
-					"Call to \"xmlHttpRequest\" did not supply correct secret");
+		if (script==null || !script.secret.equals(secret)) {;
 			return "";
 		}
 		if(script.hasRightCookie()) {

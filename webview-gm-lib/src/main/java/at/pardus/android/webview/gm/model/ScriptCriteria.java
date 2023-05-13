@@ -73,18 +73,22 @@ public class ScriptCriteria extends ScriptId {
 			//CMN.debug("match::", match);
 			CMN.debug(match);
 			for (int i = 0; i < match.length-1; i+=2) {
-				String type = match[i];
-				String pattern = match[i+1];
-				//CMN.debug("testUrl::", type, pattern, CriterionMatcher.test(pattern, url));
-				if ("=".equals(type) || "+".equals(type)) {
-					if (!matched) {
-						matched = CriterionMatcher.test(pattern, url);
+				try {
+					String type = match[i];
+					String pattern = match[i + 1];
+					//CMN.debug("testUrl::", type, pattern, CriterionMatcher.test(pattern, url));
+					if ("=".equals(type) || "+".equals(type)) {
+						if (!matched) {
+							matched = CriterionMatcher.test(pattern, url, "=".equals(type));
+						}
+					} else {
+						//if ("!".equals(type))
+						if (CriterionMatcher.test(pattern, url, false)) {
+							return false;
+						}
 					}
-				} else {
-					//if ("!".equals(type))
-					if(CriterionMatcher.test(pattern, url)) {
-						return false;
-					}
+				} catch (Exception e) {
+					CMN.debug(e);
 				}
 			}
 		}
@@ -180,6 +184,8 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=37) public boolean hasRightBlockCorsJump(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=38) public void hasRightBlockJS(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=38) public boolean hasRightBlockJS(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=39) public void hasRightEmbeded(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=39) public boolean hasRightEmbeded(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;
@@ -195,7 +201,7 @@ public class ScriptCriteria extends ScriptId {
 		if (secret==null) {
 			hash = (name+namespace).replaceAll("[^0-9a-zA-Z_]", "");
 			secret = UUID.randomUUID().toString();
-			CMN.debug("registered::secret::", runtimeId, secret, hash, this);
+			//CMN.debug("registered::secret::", runtimeId, secret, hash, this);
 			// todo retrieve connects on the run
 		}
 	}
