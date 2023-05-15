@@ -155,6 +155,7 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=24) public boolean hasRightXmlHttpRequest(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=25) public void hasRightDownload(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=25) public boolean hasRightDownload(){ rights|=Z; throw new RuntimeException(); }
+	
 	@Metaline(flagPos=26) public void hasRightRunStart(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=26) public boolean hasRightRunStart(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=27) public void hasRightRunEnd(boolean val){ rights|=Z; throw new RuntimeException(); }
@@ -166,10 +167,9 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=29) public boolean hasRightResource(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=30) public void hasRightRequire(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=30) public boolean hasRightRequire(){ rights|=Z; throw new RuntimeException(); }
+	
 	@Metaline(flagPos=31) public void hasRightLog(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=31) public boolean hasRightLog(){ rights|=Z; throw new RuntimeException(); }
-	@Metaline(flagPos=31) public void hasRightNone(boolean val){ rights|=Z; throw new RuntimeException(); }
-	@Metaline(flagPos=31) public boolean hasRightNone(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=32) public void hasRightSetTab(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=32) public boolean hasRightSetTab(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=33) public void hasRightGetTab(boolean val){ rights|=Z; throw new RuntimeException(); }
@@ -186,6 +186,8 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=38) public boolean hasRightBlockJS(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=39) public void hasRightEmbeded(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=39) public boolean hasRightEmbeded(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=40) public void hasRightNone(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=40) public boolean hasRightNone(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;
