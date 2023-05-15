@@ -75,39 +75,6 @@ public class Script extends ScriptMetadata {
 	
 	static TreeMap<String, Integer> allRightsLookup = new TreeMap<>();
 	
-	static {
-		int cc=7;
-		allRightsLookup.put("GM_getValue".substring(3), cc++);
-		allRightsLookup.put("GM_setValue".substring(3), cc++);
-		allRightsLookup.put("GM_openInTab".substring(3), cc++);
-		allRightsLookup.put("GM_registerMenuCommand".substring(3), cc++);
-		allRightsLookup.put("GM_deleteValue".substring(3), cc++);
-		allRightsLookup.put("GM_listValues".substring(3), cc++);
-		allRightsLookup.put("GM_addStyle".substring(3), cc++);
-		allRightsLookup.put("GM_cookie".substring(3), cc++);
-		allRightsLookup.put("GM_info".substring(3), cc++);
-		allRightsLookup.put("GM_notification".substring(3), cc++);
-		allRightsLookup.put("GM_unregisterMenuCommand".substring(3), cc++);
-		allRightsLookup.put("GM_setClipboard".substring(3), cc++);
-		allRightsLookup.put("GM_addValueChangeListener".substring(3), cc++);
-		allRightsLookup.put("GM_removeValueChangeListener".substring(3), cc++);
-		allRightsLookup.put("GM_getResourceText".substring(3), cc++);
-		allRightsLookup.put("GM_getResourceURL".substring(3), cc++);
-		allRightsLookup.put("GM_addElement".substring(3), cc++);
-		allRightsLookup.put("GM_xmlhttpRequest".substring(3), cc++);
-		allRightsLookup.put("GM_download".substring(3), cc++);
-		
-		cc=31;
-		allRightsLookup.put("GM_log".substring(3), cc++);
-		allRightsLookup.put("GM_setTab".substring(3), cc++);
-		allRightsLookup.put("GM_getTab".substring(3), cc++);
-		allRightsLookup.put("GM_getTabs".substring(3), cc++);
-		allRightsLookup.put("GM_saveTab".substring(3), cc++);
-		allRightsLookup.put("GM_blockImage".substring(3), cc++);
-		allRightsLookup.put("GM_blockCorsJump".substring(3), cc++);
-		allRightsLookup.put("GM_blockJS".substring(3), cc++);
-	}
-	
 	
 	
 	/**
@@ -211,18 +178,48 @@ public class Script extends ScriptMetadata {
 								for (int i = 3; i < length; i++) {
 									sb.append(propertyValue.charAt(i));
 								}
-								
+								if (allRightsLookup.size()==0) {
+									synchronized (allRightsLookup) {
+										int cc=7;
+										allRightsLookup.put("GM_getValue".substring(3), cc++);
+										allRightsLookup.put("GM_setValue".substring(3), cc++);
+										allRightsLookup.put("GM_openInTab".substring(3), cc++);
+										allRightsLookup.put("GM_registerMenuCommand".substring(3), cc++);
+										allRightsLookup.put("GM_deleteValue".substring(3), cc++);
+										allRightsLookup.put("GM_listValues".substring(3), cc++);
+										allRightsLookup.put("GM_addStyle".substring(3), cc++);
+										allRightsLookup.put("GM_cookie".substring(3), cc++);
+										allRightsLookup.put("GM_info".substring(3), cc++);
+										allRightsLookup.put("GM_notification".substring(3), cc++);
+										allRightsLookup.put("GM_unregisterMenuCommand".substring(3), cc++);
+										allRightsLookup.put("GM_setClipboard".substring(3), cc++);
+										allRightsLookup.put("GM_addValueChangeListener".substring(3), cc++);
+										allRightsLookup.put("GM_removeValueChangeListener".substring(3), cc++);
+										allRightsLookup.put("GM_getResourceText".substring(3), cc++);
+										allRightsLookup.put("GM_getResourceURL".substring(3), cc++);
+										allRightsLookup.put("GM_addElement".substring(3), cc++);
+										allRightsLookup.put("GM_xmlhttpRequest".substring(3), cc++);
+										allRightsLookup.put("GM_download".substring(3), cc++);
+										
+										cc=31;
+										allRightsLookup.put("GM_log".substring(3), cc++);
+										allRightsLookup.put("GM_setTab".substring(3), cc++);
+										allRightsLookup.put("GM_getTab".substring(3), cc++);
+										allRightsLookup.put("GM_getTabs".substring(3), cc++);
+										allRightsLookup.put("GM_saveTab".substring(3), cc++);
+										allRightsLookup.put("GM_blockImage".substring(3), cc++);
+										allRightsLookup.put("GM_blockCorsJump".substring(3), cc++);
+										allRightsLookup.put("GM_blockJS".substring(3), cc++);
+									}
+								}
 								Integer flagPos = allRightsLookup.get(sb.toString());
 								CMN.debug("flagPos::", flagPos, propertyValue);
 								if (flagPos!=null) {
 									tmp.rights |= 1L<<flagPos;
 								}
-								if(flagPos==null)
-									CMN.debug("!!!xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
-								if(propertyValue.equals("GM_blockImage"))
-									CMN.debug("blockImage::", tmp.hasRightBlockImage());
-								if(propertyValue.equals("GM_xmlhttpRequest"))
-									CMN.debug("----xmlhttpRequest::!!!", tmp.hasRightXmlHttpRequest());
+								if(flagPos==null) CMN.debug("!!!xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
+								if(propertyValue.equals("GM_blockImage")) CMN.debug("blockImage::", tmp.hasRightBlockImage());
+								if(propertyValue.equals("GM_xmlhttpRequest")) CMN.debug("----xmlhttpRequest::!!!", tmp.hasRightXmlHttpRequest());
 							} else if(length==4){
 								// "none"
 								tmp.hasRightNone(true);
