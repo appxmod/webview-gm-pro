@@ -242,6 +242,10 @@ public class WebViewGmApi {
 		}
 		return "";
 	}
+	
+	public String getCurrentHost(){
+		return "";
+	}
 
 	/**
 	 * Equivalent of GM_xmlHttpRequest.
@@ -267,7 +271,11 @@ public class WebViewGmApi {
 					WebViewXmlHttpRequest request = new WebViewXmlHttpRequest(this.view, jsonRequestString);
 					String domain = getDomain(request.url);
 					CMN.debug(domain, "xmlHttpRequest::connect", script.connect);
-					if (script.connect != null) {
+					String currentHost = getCurrentHost();
+					if(currentHost.equals(domain)) {
+						doit = true;
+					}
+					if (!doit && script.connect != null) {
 						for (String conn : script.connect) {
 							if (domain.endsWith(conn)) {
 								int num = domainSegNum(conn);
@@ -389,6 +397,22 @@ public class WebViewGmApi {
 	public void blockCorsJump(String runtimeId, String secret, boolean block) {
 		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
 		if(script!=null && script.hasRightBlockCorsJump()) {
+		
+		}
+	}
+	
+    @JavascriptInterface
+	public void registerMenuCommand(String runtimeId, String secret, String caption, String commandFunc) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightRegisterMenuCommand()) {
+		
+		}
+	}
+	
+    @JavascriptInterface
+	public void unregisterMenuCommand(String runtimeId, String secret, String id) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightRegisterMenuCommand()) {
 		
 		}
 	}

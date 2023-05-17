@@ -21,9 +21,11 @@ import android.util.Base64;
 import android.util.Log;
 import android.webkit.WebView;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,6 +35,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -347,9 +350,9 @@ public class WebViewXmlHttpRequest {
 //		CMN.debug("loadUrlOnUiThread::evaluateJavascript::", jsUrl);
 		view.post(new Runnable() {
 			public void run() {
-				view.loadUrl(jsUrl);
+//				view.loadUrl(jsUrl);
 //				CMN.debug("evaluateJavascript::", jsUrl.substring(11));
-//				view.evaluateJavascript(jsUrl.substring(11), null);
+				view.evaluateJavascript(jsUrl, null);
 			}
 		});
 	}
@@ -359,7 +362,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ this.onError + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -371,13 +374,30 @@ public class WebViewXmlHttpRequest {
 		if (this.onLoad.equals("")) {
 			return;
 		}
-		CMN.debug("executeOnLoadCallback::", "javascript: (function() { unsafeWindow"
-				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
-				+ ")); console.log('loaded::',"+url+")})()");
-
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
-				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
-				+ ")); console.log('loaded::',\""+url+"\")})()");
+		
+//		CMN.debug("executeOnLoadCallback::", "(function() { unsafeWindow"
+//				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
+//				+ "))\r\n console.log('loaded::',"+url+")})()");
+//
+//
+//		CMN.debug("executeOnLoadCallback::", response.toJSONObject().toString());
+//
+//
+//		try {
+//			FileOutputStream fout = new FileOutputStream("/sdcard/test.js");
+//			fout.write(("(function() { unsafeWindow"
+////				+ this.onLoad + "(JSON.parse(\"" + StringEscapeUtils.escapeJava(response.toJSONObject().toString())
+//					+ this.onLoad + "((" + response.toJSONObject().toString()
+//					+ ")); console.log('loaded::',\""+url+"\")})()").getBytes(StandardCharsets.UTF_8));
+//			fout.close();
+//		} catch (Exception e) {
+//			CMN.debug(e);
+//		}
+		
+		loadUrlOnUiThread("(function() { unsafeWindow"
+//				+ this.onLoad + "(JSON.parse(\"" + StringEscapeUtils.escapeJava(response.toJSONObject().toString())
+				+ this.onLoad + "((" + response.toJSONObject().toString()
+				+ "));})()"); //  console.log('loaded::',\""+url+"\")
 	}
 
 	private void executeOnProgressCallback(WebViewXmlHttpResponse response) {
@@ -385,7 +405,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ this.onProgress + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -396,7 +416,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 		
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ this.onReadyStateChange + "(JSON.parse("
 				+ response.toJSONString() + ")); })()");
 	}
@@ -406,7 +426,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ this.onTimeout + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -416,7 +436,7 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ getUploadOnError() + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}
@@ -426,7 +446,7 @@ public class WebViewXmlHttpRequest {
             return;
         }
 		
-		loadUrlOnUiThread("javascript: (function() { unsafeWindow"
+		loadUrlOnUiThread("(function() { unsafeWindow"
 				+ getUploadOnLoad() + "(JSON.parse(" + response.toJSONString()
 				+ ")); })()");
 	}

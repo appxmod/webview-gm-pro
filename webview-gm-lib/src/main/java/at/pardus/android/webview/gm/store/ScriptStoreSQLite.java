@@ -79,7 +79,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		ScriptCriteria[] scripts = cache.get(url);
 		if (scripts == null) {
 			if (dbHelper == null) {
-				Log.w(TAG, "Cannot get user scripts (database not available)");
+				Log.w(TAG, "Cannot get user scripts");
 				return null;
 			}
 			List<ScriptCriteria> matches = new ArrayList<ScriptCriteria>();

@@ -173,7 +173,7 @@ public class Script extends ScriptMetadata {
 						//CMN.debug("grant::", propertyValue, "GM_xmlhttpRequest".equals(propertyValue));
 						int length = propertyValue.length();
 						if (length >= 7) {
-							if (propertyValue.startsWith("GM_")) {
+							if (propertyValue.charAt(0)==71) { // GM_***
 								sb.setLength(0);
 								for (int i = 3; i < length; i++) {
 									sb.append(propertyValue.charAt(i));
@@ -217,9 +217,12 @@ public class Script extends ScriptMetadata {
 								if (flagPos!=null) {
 									tmp.rights |= 1L<<flagPos;
 								}
-								if(flagPos==null) CMN.debug("!!!xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
-								if(propertyValue.equals("GM_blockImage")) CMN.debug("blockImage::", tmp.hasRightBlockImage());
-								if(propertyValue.equals("GM_xmlhttpRequest")) CMN.debug("----xmlhttpRequest::!!!", tmp.hasRightXmlHttpRequest());
+								if(flagPos==null)
+									CMN.debug("!!!xmlhttpRequest::", propertyValue, tmp.hasRightXmlHttpRequest(), "GM_xmlhttpRequest".equals(propertyValue), propertyValue.equals("GM_xmlhttpRequest"));
+								if(propertyValue.equals("GM_blockImage"))
+									CMN.debug("blockImage::", tmp.hasRightBlockImage());
+								if(propertyValue.equals("GM_xmlhttpRequest"))
+									CMN.debug("----xmlhttpRequest::!!!", tmp.hasRightXmlHttpRequest());
 							} else if(length==4){
 								// "none"
 								tmp.hasRightNone(true);
@@ -279,7 +282,7 @@ public class Script extends ScriptMetadata {
 		if (requires.size() > 0) {
 			for (ScriptRequire req : requires) {
 				if (!scriptStore.scriptHasRequire(new ScriptId(name, namespace), req.getUrl())) {
-					CMN.debug("下载::脚本::", req.getUrl());
+					//CMN.debug("下载::脚本::", req.getUrl());
 					req.setContent(DownloadHelper.downloadScript(req.getUrl()));
 				}
 			}
@@ -288,7 +291,7 @@ public class Script extends ScriptMetadata {
 		if (resources.size() > 0) {
 			for (ScriptResource res : resources) {
 				if (!scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName())) {
-					CMN.debug("下载::资源::", res.getName(), res.getUrl());
+					//CMN.debug("下载::资源::", res.getName(), res.getUrl());
 					res.setData(DownloadHelper.downloadBytes(res.getUrl()));
 				}
 				//CMN.debug("scriptStore.scriptHasResource::", scriptStore.scriptHasResource(new ScriptId(name, namespace), res.getName()));

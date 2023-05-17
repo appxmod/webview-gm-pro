@@ -18,8 +18,14 @@ package at.pardus.android.webview.gm.run;
 
 import android.util.Log;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+
+import at.pardus.android.webview.gm.store.CMN;
 
 public class WebViewXmlHttpResponse {
 
@@ -97,6 +103,13 @@ public class WebViewXmlHttpResponse {
 	}
 
 	public void setResponseText(String newResponseText) {
+//		try {
+//			FileOutputStream fout = new FileOutputStream("/sdcard/test.html");
+//			fout.write(newResponseText.getBytes(StandardCharsets.UTF_8));
+//			fout.close();
+//		} catch (Exception e) {
+//			CMN.debug(e);
+//		}
 		this.responseText = newResponseText;
 	}
 

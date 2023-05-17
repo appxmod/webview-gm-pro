@@ -64,8 +64,8 @@ public class WebViewClientGm extends WebViewClient {
 		//console.log('GM_getValue', name, v);
 		var ret =  GM_wv.bg.getValue(GM_wv.id, GM_wv.sec, name);
 		if(ret==undefined) ret=v;
-		if(ret!=undefined && ret!=null) ret=JSON.parse(ret);
 		//console.log('get=', ret);
+		if(ret!=undefined && ret!=null) try{ret=JSON.parse(ret)}catch(e){console.log(e)};
 		//console.log(new Error());
 		return ret;
 	}
@@ -135,14 +135,22 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_openInTab() {
 		nonimpl('GM_openInTab');
 	}
-	function GM_registerMenuCommand() {
-		nonimpl('GM_registerMenuCommand');
+	function GM_registerMenuCommand(caption, commandFunc, accessKey) {
+		var sigKey = null;
+		while(!sigKey || unsafeWindow[sigKey])
+			sigKey = 'mn_'+Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
+		unsafeWindow[sigKey] = commandFunc;
+		GM_wv.bg.registerMenuCommand(GM_wv.id, GM_wv.sec, caption, sigKey);
+		return sigKey;
 	}
 	function GM_notification() {
 		nonimpl('GM_notification');
 	}
-	function GM_unregisterMenuCommand() {
-		nonimpl('GM_unregisterMenuCommand');
+	function GM_unregisterMenuCommand(id) {
+		if(unsafeWindow[id]) {
+			delete unsafeWindow[id];
+			GM_wv.bg.unregisterMenuCommand(GM_wv.id, GM_wv.sec, id);
+		}
 	}
 	function GM_setClipboard() {
 		nonimpl('GM_setClipboard');
@@ -255,16 +263,16 @@ public class WebViewClientGm extends WebViewClient {
 	 *            JavaScript code to add after the end of the user script code
 	 *            (may be null)
 	 */
-	protected void runMatchingScripts(WebView view, String url,
+	public ScriptCriteria[] runMatchingScripts(WebView view, String url,
 			boolean pageFinished, String jsBeforeScript, String jsAfterScript) {
 		if (scriptStore == null) {
-			Log.w(TAG, "Property ScriptStoreSQLite is null - not running any scripts");
-			return;
+			Log.w(TAG, "not running any scripts");
+			return null;
 		}
 		ScriptCriteria[] matchingScripts = scriptStore.get(url, true, false);
 		CMN.debug("matchingScripts::", Arrays.toString(matchingScripts));
 		if (matchingScripts == null) {
-			return;
+			return matchingScripts;
 		}
 		if (jsBeforeScript == null) {
 			jsBeforeScript = "";
@@ -331,6 +339,7 @@ public class WebViewClientGm extends WebViewClient {
                 }
 			}
 		}
+		return matchingScripts;
 	}
 	
 	@Override
