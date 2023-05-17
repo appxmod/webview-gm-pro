@@ -93,6 +93,22 @@ public class WebViewClientGm extends WebViewClient {
 		return GM_wv.bg.getResourceText(GM_wv.id, GM_wv.sec, resourceName);
 	}
 	function GM_xmlhttpRequest(details) {
+		if(details.url.startsWith(location.origin)) try{
+			var xhr = new XMLHttpRequest();
+			xhr.open(details.method||'GET', details.url);
+			xhr.onload = function(res){
+				debug('onload, res=', res);
+				if(details.onload) details.onload(xhr);
+			};
+			xhr.onerror = details.onerror;
+			xhr.responseType = details.responseType||'';
+			xhr.ontimeout = details.ontimeout;
+			xhr.onprogress = details.onprogress;
+			xhr.onreadystatechange = details.onreadystatechange;
+			xhr.onabort = details.onabort;
+			return xhr.send();
+		} catch(e){console.log(e)}
+	
 		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
 		var pfx = GM_wv.hash;
 		var key=sig+pfx, he=details, his=unsafeWindow[key]={}, bfx='', typ=he.responseType;

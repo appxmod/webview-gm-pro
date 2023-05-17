@@ -91,14 +91,22 @@ public class CriterionMatcher {
 					boolean matchPath;
 					if (pattern.length() <= pathIdx_pattern + 2) {
 						// matchPath = true;
-						matchPath = pattern.length() < pathIdx_pattern + 2 || pattern.charAt(pathIdx_pattern + 1) == '*';
+						if (pattern.length() < pathIdx_pattern + 2) {
+							matchPath = url.length() < pathIdx_url + 2;
+						} else {
+							matchPath = pattern.charAt(pathIdx_pattern + 1) == '*';
+						}
 					} else {
 						matchPath = testGlob(pattern, pathIdx_pattern + 2, url, pathIdx_url + 2);
 						//System.out.println("testGlob::"+" "+ matchPath);
 					}
 					return matchPath;
 				} else {
-					return pathIdx_pattern < 0 || pattern.length() < pathIdx_pattern + 2 || pattern.charAt(pathIdx_pattern + 1) == '*';
+					if (pathIdx_pattern < 0 || pattern.length() < pathIdx_pattern + 2) {
+						return pathIdx_url < 0 || url.length() < pathIdx_url + 2;
+					} else {
+						return pattern.charAt(pathIdx_pattern + 1) == '*';
+					}
 				}
 			}
 		}
