@@ -417,6 +417,14 @@ public class WebViewGmApi {
 		}
 	}
 	
+    @JavascriptInterface
+	public void openInTab(String runtimeId, String secret, String url, String options) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightOpenInTab()) {
+		
+		}
+	}
+	
 	// https://github.com/Tampermonkey/tampermonkey/issues/322
     @JavascriptInterface
 	public void isInstalled(String name, String namespace, String callback) {

@@ -132,8 +132,8 @@ public class WebViewClientGm extends WebViewClient {
 	function nonimpl(n) {
 		GM_log(n+" is not yet implemented");
 	}
-	function GM_openInTab() {
-		nonimpl('GM_openInTab');
+	function GM_openInTab(url, options) {
+		GM_wv.bg.openInTab(GM_wv.id, GM_wv.sec, url, JSON.stringify(options));
 	}
 	function GM_registerMenuCommand(caption, commandFunc, accessKey) {
 		var sigKey = null;
