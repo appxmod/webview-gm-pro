@@ -65,7 +65,7 @@ public class WebViewClientGm extends WebViewClient {
 		var ret =  GM_wv.bg.getValue(GM_wv.id, GM_wv.sec, name);
 		if(ret==undefined) ret=v;
 		//console.log('get=', ret);
-		if(ret!=undefined && ret!=null) try{ret=JSON.parse(ret)}catch(e){console.log(e)};
+		if(ret!=undefined && ret!=null && ret!='') try{ret=JSON.parse(ret)}catch(e){console.log(e)};
 		//console.log(new Error());
 		return ret;
 	}
@@ -95,16 +95,26 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_xmlhttpRequest(details) {
 		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
 		var pfx = GM_wv.hash;
-		var key=sig+pfx, he=details, his=unsafeWindow[key]={}, bfx='';
+		var key=sig+pfx, he=details, his=unsafeWindow[key]={}, bfx='', typ=he.responseType;
 		pfx = '["'+key+'"].';
 		his.ondone = function() {
 			delete unsafeWindow[key];
 			//console.log('done!!!');
 		};
-		function hook(n, d) {
+		function hook(n, d, t) {
 			if(d) {
-				his['d'+n] = he[n];
-				he[n] = function(res){ if(his['d'+n]) his['d'+n](res); his.ondone(); };
+				his['d'+n] = he[n]; // 备份原方法
+				he[n] = function(res){
+					if(his['d'+n]) {
+						t=t&&res.responseText;
+						if(t) try{ // 类型转换
+							if(typ=='json') res.response = JSON.parse(t);
+							if(typ=='document') res.response = new DOMParser().parseFromString(t, 'text/html');
+						} catch(e){console.log(e)}
+						his['d'+n](res); // 调用原方法（如果存在）
+					}
+					his.ondone(); // 清理工作
+				};
 			}
 			if(he[n]) {
 				var b = bfx+n;
@@ -115,7 +125,7 @@ public class WebViewClientGm extends WebViewClient {
 		hook('ondone');
 		hook('onabort');
 		hook('onerror', 1);
-		hook('onload', 1);
+		hook('onload', 1, 1);
 		hook('onprogress');
 		hook('onreadystatechange');
 		hook('ontimeout');

@@ -375,9 +375,6 @@ public class WebViewXmlHttpRequest {
 			return;
 		}
 		
-//		CMN.debug("executeOnLoadCallback::", "(function() { unsafeWindow"
-//				+ this.onLoad + "(JSON.parse(" + response.toJSONString()
-//				+ "))\r\n console.log('loaded::',"+url+")})()");
 //
 //
 //		CMN.debug("executeOnLoadCallback::", response.toJSONObject().toString());
@@ -394,10 +391,15 @@ public class WebViewXmlHttpRequest {
 //			CMN.debug(e);
 //		}
 		
-		loadUrlOnUiThread("(function() { unsafeWindow"
+		
+		String command = "(function() { unsafeWindow"
 //				+ this.onLoad + "(JSON.parse(\"" + StringEscapeUtils.escapeJava(response.toJSONObject().toString())
 				+ this.onLoad + "((" + response.toJSONObject().toString()
-				+ "));})()"); //  console.log('loaded::',\""+url+"\")
+				+ "));})()"; //  console.log('loaded::',\""+url+"\")
+		
+		CMN.debug("executeOnLoadCallback::", command);
+		
+		loadUrlOnUiThread(command);
 	}
 
 	private void executeOnProgressCallback(WebViewXmlHttpResponse response) {
