@@ -307,6 +307,7 @@ public class Script extends ScriptMetadata {
 		if (tmp.hasRightToRun() == 0) {
 			tmp.hasRightRunEnd(true);
 		}
+		tmp.needReplaceWindowGM_(scriptStr.indexOf(".GM_")>0);
 		CMN.debug("parsed tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest(), Arrays.toString(requireArr));
 		return new Script(name, namespace, version, matchArr, connectArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,

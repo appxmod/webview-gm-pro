@@ -188,6 +188,8 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=39) public boolean hasRightEmbeded(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=40) public void hasRightNone(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=40) public boolean hasRightNone(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=41, shift=1) public void needReplaceWindowGM_(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=41, shift=1) public boolean needReplaceWindowGM_(){ rights|=Z; throw new RuntimeException(); }
 	
 	public void release() {
 		this.name = null;

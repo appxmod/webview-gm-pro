@@ -26,6 +26,7 @@ import org.knziha.metaline.Metaline;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 import at.pardus.android.webview.gm.model.Script;
 import at.pardus.android.webview.gm.model.ScriptCriteria;
@@ -47,12 +48,20 @@ public class WebViewClientGm extends WebViewClient {
 	private static final boolean bigcake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
 
    /**
-	unsafeWindow = (function() {
-		var el = document.createElement('p');
-		el.setAttribute('onclick', 'return window;');
-		return el.onclick();
-	}());
-	window.wrappedJSObject = unsafeWindow;
+	var unsafeWindow = window, GM_window = unsafeWindow.Proxy?new unsafeWindow.Proxy(unsafeWindow, {
+	  get: function(target, property) {
+		if (typeof target[property] === 'function') {
+		  return new Proxy(target[property], {
+			apply: function(funcTarget, thisArg, argumentsList) {
+			  return funcTarget.apply(thisArg, argumentsList);
+			}
+		  });
+		} else if(property.startsWith('GM_')) try{
+		  return eval(property);
+		} catch(e){}
+		return target[property];
+	  }
+	}):unsafeWindow;
 	var GM_wv={};
 	function GM_isInstalled(a,b,c) {
 		GM_wv.bg.isInstalled(a,b,c);
@@ -214,7 +223,7 @@ public class WebViewClientGm extends WebViewClient {
 		}
 	};
  */
-	@Metaline()
+	@Metaline(compile = true)
 	private static final String JSUNSAFEWINDOW = "https://wiki.greasespot.net/Greasemonkey_Manual:API";
 
 	/**var GM_info = {
@@ -346,9 +355,12 @@ public class WebViewClientGm extends WebViewClient {
 							buffer.append("\n");
 						}
 					}
-					
+					String content = script.getContent();
+					if (key.needReplaceWindowGM_() && content.indexOf(".GM_")>0) {
+						content = content.replaceAll("[^\\s:;,.!?|{}()\\[\\] + -]+?\\.GM_", "GM_window.GM_");
+					}
 					buffer.append(jsBeforeScript)
-							.append(script.getContent())
+							.append(content)
 							.append(jsAfterScript);
 					if (!unwrap) {
 						buffer.append(JSCONTAINEREND);
