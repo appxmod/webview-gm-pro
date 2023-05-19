@@ -106,7 +106,7 @@ public class WebViewClientGm extends WebViewClient {
 			var xhr = new XMLHttpRequest();
 			xhr.open(details.method||'GET', details.url);
 			xhr.onload = function(res){
-				debug('onload, res=', res);
+				//debug('onload, res=', res);
 				if(details.onload) details.onload(xhr);
 			};
 			xhr.onerror = details.onerror;
