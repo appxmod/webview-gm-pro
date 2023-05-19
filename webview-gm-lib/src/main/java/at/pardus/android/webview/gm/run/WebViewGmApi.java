@@ -362,7 +362,7 @@ public class WebViewGmApi {
 			this.view.post(new Runnable() {
 				@Override
 				public void run() {
-					view.evaluateJavascript("(function() { unsafeWindow[\""
+					view.evaluateJavascript("(function() { window[\""
 							+ callback + "\"](JSON.parse(" + JSONObject.quote(response.toString())
 							+ ")); ", null);
 				}
