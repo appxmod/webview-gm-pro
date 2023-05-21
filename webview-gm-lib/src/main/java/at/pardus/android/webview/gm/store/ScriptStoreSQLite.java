@@ -541,11 +541,11 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final String[] COLS_SCRIPT = new String[] { COL_NAME
 				, COL_NAMESPACE, COL_DESCRIPTION, COL_DOWNLOADURL, COL_UPDATEURL
 				, COL_INSTALLURL, COL_ICON/*, COL_RUNAT*//*, COL_UNWRAP*/, COL_VERSION
-				, COL_ENABLED, COL_RIGHTS, COL_CONTENT };
+				, COL_ENABLED, COL_RIGHTS, COL_CONTENT, COL_NAME_LOCAL };
 		private static final String[] COLS_SCRIPT_META = new String[] { COL_NAME
 				, COL_NAMESPACE, COL_DESCRIPTION, COL_DOWNLOADURL, COL_UPDATEURL
 				, COL_INSTALLURL, COL_ICON/*, COL_RUNAT*//*, COL_UNWRAP*/, COL_VERSION
-				, COL_ENABLED, COL_RIGHTS };
+				, COL_ENABLED, COL_RIGHTS, COL_NAME_LOCAL };
 		
 		private SQLiteDatabase db;
 		private final ScriptStoreSQLite scriptStore;
@@ -576,7 +576,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		// @Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			CMN.debug(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
-//			for (int v = oldVersion; v <= newVersion; v++) {
+			for (int v = oldVersion; v <= newVersion; v++) {
 //				if (v == DB_SCHEMA_VERSION_2) {
 //					db.execSQL(TBL_REQUIRE_CREATE);
 //					db.execSQL(TBL_RESOURCE_CREATE);
@@ -605,7 +605,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 //				{
 //					if(!columnExists(db, TBL_SCRIPT, COL_NAME_LOCAL)) db.execSQL("ALTER TABLE "+TBL_SCRIPT+" ADD COLUMN "+COL_NAME_LOCAL+" TEXT");
 //				}
-//			}
+			}
 		}
 		
 		private static boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
@@ -717,7 +717,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 						, description, downloadurl,
 						updateurl, installurl, icon, runat, unwrap == 1,
 						requireArr, resourceArr, bEnable, rights, content);
-				
+				scriptsArr[i].nameLocal = cursor.getString(cc++);
 				i++;
 			}
 			cursor.close();
@@ -1030,6 +1030,7 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 			}
 			ContentValues fieldsScript = new ContentValues(fieldsId);
 			fieldsScript.put(COL_DESCRIPTION, script.getDescription());
+			fieldsScript.put(COL_NAME_LOCAL, script.nameLocal);
 			fieldsScript.put(COL_DOWNLOADURL, script.getDownloadurl());
 			fieldsScript.put(COL_UPDATEURL, script.getUpdateurl());
 			fieldsScript.put(COL_INSTALLURL, script.getInstallurl());

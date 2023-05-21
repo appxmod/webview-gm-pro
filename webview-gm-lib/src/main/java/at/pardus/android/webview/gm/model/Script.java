@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
@@ -98,7 +99,7 @@ public class Script extends ScriptMetadata {
 	 */
 	public static Script parse(String scriptStr, String url, ScriptStoreSQLite scriptStore) {
 		CMN.debug("fatal parsing::", url);
-		String name = null, namespace = null, description = null, downloadurl = null, updateurl = null, installurl = null, icon = null, runAt = null, version = null;
+		String name = null, nameLocal = null, namespace = null, description = null, downloadurl = null, updateurl = null, installurl = null, icon = null, runAt = null, version = null;
 		boolean unwrap = false;
 		if (url != null) {
 			int filenameStart = url.lastIndexOf("/") + 1;
@@ -121,7 +122,7 @@ public class Script extends ScriptMetadata {
 		ArrayList<ScriptRequire> requires = new ArrayList<>();
 		ArrayList<ScriptResource> resources = new ArrayList<>();
 		
-		Pattern pattern = Pattern.compile("// @(\\S+)(?:\\s+(.*))?");
+		final Pattern pattern = Pattern.compile("// @(\\S+)(?:\\s+(.*))?");
 		Scanner scanner = new Scanner(scriptStr);
 		boolean inMetaBlock = false;
 		boolean metaBlockEnded = false;
@@ -143,17 +144,28 @@ public class Script extends ScriptMetadata {
 			Matcher matcher = pattern.matcher(line);
 			if (matcher.matches()) {
 				String propertyName = matcher.group(1);
+				//CMN.debug("propertyName::", propertyName);
 				String propertyValue = matcher.groupCount() >= 2 ? matcher.group(2) : null;
 				if (propertyValue != null && propertyValue.equals("")) {
 					propertyValue = null;
 				}
 				if (propertyValue != null) {
-					if (propertyName.equals("name")) {
-						name = propertyValue;
-					} else if (propertyName.equals("namespace")) {
-						namespace = propertyValue;
-					} else if (propertyName.equals("description")) { // todo parse localized name and description
-						description = propertyValue;
+					if (propertyName.startsWith("name")) {
+						if (propertyName.equals("namespace")) {
+							namespace = propertyValue;
+						} else {
+							if (propertyName.equals("name") || name==null) {
+								name = propertyValue;
+							}
+							if (nameLocal==null || isLocaleField(propertyName)) {
+								nameLocal = propertyValue;
+							}
+						}
+					} else if (propertyName.startsWith("description")) {
+						// parse localized name and description
+						if (description==null || isLocaleField(propertyName)) {
+							description = propertyValue;
+						}
 					} else if (propertyName.equals("downloadURL")) {
 						downloadurl = propertyValue;
 					} else if (propertyName.equals("updateURL")) {
@@ -309,8 +321,27 @@ public class Script extends ScriptMetadata {
 		}
 		tmp.needReplaceWindowGM_(scriptStr.indexOf(".GM_")>0);
 		CMN.debug("parsed tmp.rights::", tmp.rights, tmp.hasRightRunEnd(), tmp.hasRightXmlHttpRequest(), Arrays.toString(requireArr));
-		return new Script(name, namespace, version, matchArr, connectArr,
+		Script ret = new Script(name, namespace, version, matchArr, connectArr,
 				description, downloadurl, updateurl, installurl, icon, runAt,
 				unwrap, requireArr, resourceArr, true, tmp.rights, scriptStr);
+		if (nameLocal!=null && !nameLocal.equals(name)) {
+			ret.nameLocal = nameLocal;
+		}
+		return ret;
+	}
+	
+	public static String localeStr;
+	public static String localeCountryStr;
+	
+	private static boolean isLocaleField(String propertyName) {
+		if (localeStr==null) {
+			Locale defaultLocale = Locale.getDefault();
+			String languageCode = defaultLocale.getLanguage();
+			String countryCode = defaultLocale.getCountry();
+			String localeCode = languageCode + "-" + countryCode;
+			localeStr = ":"+localeCode;
+			localeCountryStr = ":"+countryCode;
+		}
+		return propertyName.endsWith(localeStr)||propertyName.endsWith(localeCountryStr);
 	}
 }

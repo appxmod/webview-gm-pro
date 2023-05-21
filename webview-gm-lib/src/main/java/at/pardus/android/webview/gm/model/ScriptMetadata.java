@@ -28,6 +28,7 @@ public class ScriptMetadata extends ScriptCriteria {
 	public static final String RUNATEND = "document-end";
 
 	private String description;
+	public String nameLocal;
 
 	private String downloadurl;
 
@@ -44,8 +45,6 @@ public class ScriptMetadata extends ScriptCriteria {
 	protected ScriptResource[] resources;
 
 	private boolean unwrap;
-
-	private String version;
 
 	public ScriptMetadata(String name, String namespace, String[] match, String description,
 						  String downloadurl, String updateurl, String installurl,
