@@ -102,12 +102,13 @@ public class WebViewClientGm extends WebViewClient {
 		return GM_wv.bg.getResourceText(GM_wv.id, GM_wv.sec, resourceName);
 	}
 	function GM_xmlhttpRequest(details) {
+		//console.log('GM_xmlhttpRequest, details=', details, details.url.startsWith(location.origin));
 		if(details.url.startsWith(location.origin)) try{
 			var xhr = new XMLHttpRequest();
 			xhr.open(details.method||'GET', details.url);
 			xhr.onload = function(res){
-				//debug('onload, res=', res);
-				if(details.onload) details.onload(xhr);
+				//console.log('onload, res=', res, xhr);
+				if(details.onload) details.onload(res.target);
 			};
 			xhr.onerror = details.onerror;
 			xhr.responseType = details.responseType||'';
@@ -224,6 +225,7 @@ public class WebViewClientGm extends WebViewClient {
 	};
  */
 	@Metaline(compile = true)
+	//@Metaline(compile = false, trim = false)
 	private static final String JSUNSAFEWINDOW = "https://wiki.greasespot.net/Greasemonkey_Manual:API";
 
 	/**var GM_info = {

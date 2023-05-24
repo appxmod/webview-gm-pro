@@ -260,7 +260,13 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		if (dbHelper != null) {
 			return;
 		}
-		dbHelper = new ScriptDbHelper(this, name);
+		try {
+			dbHelper = new ScriptDbHelper(this, name);
+		} catch (Exception e) {
+			DB_VERSION++;
+			CMN.debug(e);
+			dbHelper = new ScriptDbHelper(this, name);
+		}
 		initCache();
 	}
 
@@ -387,6 +393,8 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		return dbHelper.getResource(script, resourceName);
 	}
 	
+	public static int DB_VERSION = 12;
+	
 	/**
 	 * Private class to manage the database access.
 	 */
@@ -396,7 +404,6 @@ public class ScriptStoreSQLite /*implements ScriptStore*/ {
 		private static final int DB_SCHEMA_VERSION_4 = 4;
 		private static final int DB_SCHEMA_VERSION_3 = 3;
 		private static final int DB_SCHEMA_VERSION_2 = 2;
-		private static final int DB_VERSION = 12;
 
 		private static final String TBL_SCRIPT = "script";
 		private static final String COL_NAME = "name";
