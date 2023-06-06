@@ -206,6 +206,12 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_blockJS(block) {
 		return GM_wv.bg.blockJS(GM_wv.id, GM_wv.sec, block);
 	}
+	function GM_turnOnScreen(activate) {
+		return GM_wv.bg.turnOnScreen(GM_wv.id, GM_wv.sec, activate);
+	}
+	function GM_windowHeight() {
+		return GM_wv.bg.windowHeight(GM_wv.id, GM_wv.sec);
+	}
 	function hookCallback(cb, b) {
 		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7)
 		, pfx = GM_wv.hash

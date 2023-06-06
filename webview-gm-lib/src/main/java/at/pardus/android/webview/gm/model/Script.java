@@ -222,6 +222,9 @@ public class Script extends ScriptMetadata {
 										allRightsLookup.put("GM_blockImage".substring(3), cc++);
 										allRightsLookup.put("GM_blockCorsJump".substring(3), cc++);
 										allRightsLookup.put("GM_blockJS".substring(3), cc++);
+										
+										cc=42;
+										allRightsLookup.put("GM_turnOnScreen".substring(3), cc++);
 									}
 								}
 								Integer flagPos = allRightsLookup.get(sb.toString());

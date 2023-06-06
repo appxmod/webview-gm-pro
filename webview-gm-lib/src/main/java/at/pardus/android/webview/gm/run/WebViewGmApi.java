@@ -393,6 +393,23 @@ public class WebViewGmApi {
 		}
 	}
 	
+	@JavascriptInterface
+	public void turnOnScreen(String runtimeId, String secret, boolean activate) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightTurnOnScreen()) {
+		
+		}
+	}
+	
+	@JavascriptInterface
+	public int windowHeight(String runtimeId, String secret) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null) {
+			return Integer.parseInt(script.version);
+		}
+		return 0;
+	}
+	
     @JavascriptInterface
 	public void blockCorsJump(String runtimeId, String secret, boolean block) {
 		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
