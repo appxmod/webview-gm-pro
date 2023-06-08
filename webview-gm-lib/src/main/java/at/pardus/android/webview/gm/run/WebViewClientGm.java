@@ -22,8 +22,10 @@ import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.knziha.metaline.Metaline;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
@@ -90,7 +92,7 @@ public class WebViewClientGm extends WebViewClient {
 		var style = document.createElement("style");
 		style.type = "text/css";
 		style.innerHTML = css;
-		document.getElementsByTagName('head')[0].appendChild(style);
+		document.head.appendChild(style);
 	}
 	function GM_log(message) {
 		GM_wv.bg.log(GM_wv.id, GM_wv.sec, message);
@@ -354,16 +356,30 @@ public class WebViewClientGm extends WebViewClient {
 								.append(";").append(JSGMINFO).append("\n");
 					}
 					
+					String content = script.getContent();
+					
 					// Get @require'd scripts to inject for this script.
 					ScriptRequire[] requires = script.getRequires();
 					if (requires != null) {
-						for (ScriptRequire currentRequire : requires) {
-							//CMN.debug("currentRequire::", currentRequire.getContent());
-							buffer.append(currentRequire.getContent());
-							buffer.append("\n");
+						int idx = content.indexOf("// ==/UserScript==");
+						if (idx>0) {
+							ArrayList<String> required = new ArrayList<>(requires.length);
+							while ((idx = content.lastIndexOf("\n// @require", idx - 9)) > 0) {
+								String urlKey = content.substring(idx + 12, content.indexOf("\n", idx + 15)).trim();
+								for (ScriptRequire currentRequire : requires) {
+									if (urlKey.equals(currentRequire.getUrl())) {
+										//CMN.debug("currentRequire::", currentRequire.getContent());
+										required.add(currentRequire.getContent());
+									}
+								}
+							}
+							for (int i = required.size()-1; i >= 0; i--) {
+								//CMN.debug("currentRequire::", currentRequire.getContent());
+								buffer.append(required.get(i));
+								buffer.append("\n");
+							}
 						}
 					}
-					String content = script.getContent();
 					if (key.needReplaceWindowGM_() && content.indexOf(".GM_")>0) {
 						content = content.replaceAll("[^\\s:;,.!?|{}()\\[\\] + -]+?\\.GM_", "GM_window.GM_");
 					}
