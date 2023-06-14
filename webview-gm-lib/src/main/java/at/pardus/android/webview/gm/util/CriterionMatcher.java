@@ -176,6 +176,9 @@ public class CriterionMatcher {
 				}
 				pChar = pattern.charAt(pInd);
 			}
+			if (sInd >= sLen) {
+				return false;
+			}
 			char sChar = str.charAt(sInd);
 			if (pChar != sChar) {
 				return false;

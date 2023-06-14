@@ -69,28 +69,32 @@ public class ScriptCriteria extends ScriptId {
 	 */
 	public boolean testUrl(String url) {
 		boolean matched = false;
-		if (match != null) {
-			//CMN.debug("match::", match);
-			CMN.debug(match);
-			for (int i = 0; i < match.length-1; i+=2) {
-				try {
-					String type = match[i];
-					String pattern = match[i + 1];
-					//CMN.debug("testUrl::", type, pattern, CriterionMatcher.test(pattern, url));
-					if ("=".equals(type) || "+".equals(type)) {
-						if (!matched) {
-							matched = CriterionMatcher.test(pattern, url, "=".equals(type));
+		try {
+			if (match != null) {
+				//CMN.debug("match::", match);
+				CMN.debug(match);
+				for (int i = 0; i < match.length - 1; i += 2) {
+					try {
+						String type = match[i];
+						String pattern = match[i + 1];
+						//CMN.debug("testUrl::", type, pattern, CriterionMatcher.test(pattern, url));
+						if ("=".equals(type) || "+".equals(type)) {
+							if (!matched) {
+								matched = CriterionMatcher.test(pattern, url, "=".equals(type));
+							}
+						} else {
+							//if ("!".equals(type))
+							if (CriterionMatcher.test(pattern, url, false)) {
+								return false;
+							}
 						}
-					} else {
-						//if ("!".equals(type))
-						if (CriterionMatcher.test(pattern, url, false)) {
-							return false;
-						}
+					} catch (Exception e) {
+						CMN.debug(e);
 					}
-				} catch (Exception e) {
-					CMN.debug(e);
 				}
 			}
+		} catch (Exception e) {
+			CMN.debug(e);
 		}
 		return matched;
 	}
