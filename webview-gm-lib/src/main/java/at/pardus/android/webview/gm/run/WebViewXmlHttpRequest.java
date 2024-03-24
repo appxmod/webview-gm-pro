@@ -64,9 +64,11 @@ public class WebViewXmlHttpRequest {
 	private int timeout;
 	private JSONObject upload;
 	public String url;
+	public URL jumpTarget;
 	private String user;
 	private final WebView view;
-
+	private int jumpCount;
+	
 	public WebViewXmlHttpRequest(WebView view, String jsonRequestString) {
 		// Register the view so that we can execute JS callbacks (e.g. onload)
 		this.view = view;
@@ -102,7 +104,7 @@ public class WebViewXmlHttpRequest {
 	}
 
 	public byte[] getDataBytes() {
-		if (this.data.length() == 0) {
+		if (this.data.length() == 0 || "null".equals(this.data)) {
 			return null;
 		}
 
@@ -188,7 +190,7 @@ public class WebViewXmlHttpRequest {
 		byte[] outputData = this.getDataBytes();
 
 		try {
-			url = new URL(this.url);
+			url = jumpTarget==null?new URL(this.url):jumpTarget;
 		} catch (MalformedURLException e) {
 			Log.e(TAG, "Specified URL is malformed: " + this.url);
 			executeOnErrorCallback(response);
@@ -220,10 +222,12 @@ public class WebViewXmlHttpRequest {
 			}
 
 			httpConn.setRequestMethod(this.method);
+			CMN.debug("setRequestMethod::", method, this.data);
 
 			Map<String, String> headers = this.getHeaders();
 			if (this.headers != null) {
 				for (String key : headers.keySet()) {
+					CMN.debug("setRequestProperty::", key, headers.get(key));
 					httpConn.setRequestProperty(key, headers.get(key));
 				}
 			}
@@ -252,8 +256,9 @@ public class WebViewXmlHttpRequest {
 				executeUploadOnLoadCallback(response);
 				duringUpload = false;
 			}
-
-			response.setStatus(httpConn.getResponseCode());
+			
+			int responseCode = httpConn.getResponseCode();
+			response.setStatus(responseCode);
 			response.setStatusText(httpConn.getResponseMessage());
 
 			// Adjust URL after "Location:" redirects, should be final now.
@@ -261,11 +266,26 @@ public class WebViewXmlHttpRequest {
 
 			response.setReadyState(WebViewXmlHttpResponse.READY_STATE_HEADERS_RECEIVED);
 			executeOnReadyStateChangeCallback(response);
+			
+			CMN.debug("ResponseCode::", responseCode);
 
 			if (httpConn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-				Log.e(TAG, "HTTP error from url: " + this.url
-						+ " HTTP Response " + httpConn.getResponseCode());
 				httpConn.disconnect();
+				if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+						|| responseCode == HttpURLConnection.HTTP_MOVED_PERM
+						|| responseCode == 307) {
+					jumpTarget = null;
+					try {
+						jumpTarget = new URL(httpConn.getHeaderField("Location"));
+					} catch (Exception e) {
+						CMN.debug(e);
+					}
+					if (/*jumpTarget!=null && */!jumpTarget.equals(url) && ++jumpCount<35) {
+						return executeHttpRequestSync();
+					}
+				}
+				Log.i(TAG, "HTTP error from url: " + url
+						+ " HTTP Response " + httpConn.getResponseCode());
 				executeOnErrorCallback(response);
 				return response;
 			}
@@ -325,7 +345,7 @@ public class WebViewXmlHttpRequest {
 			executeOnLoadCallback(response);
 		} catch (SocketTimeoutException e) {
 			CMN.debug(e);
-			Log.e(TAG, "Timeout issuing GM_xmlhttpRequest for: " + this.url
+			Log.e(TAG, "Timeout issuing GM_xmlhttpRequest for: " + url
 					+ ": " + e.getMessage());
 			executeOnTimeoutCallback(response);
 		} catch (UnsupportedEncodingException e) {
@@ -333,7 +353,7 @@ public class WebViewXmlHttpRequest {
 					"Unable to get UTF-8 bytes for HTTP Basic Auth username/password");
 			return null;
 		} catch (Exception e) {
-			Log.e(TAG, "Exception issuing GM_xmlhttpRequest for: " + this.url
+			Log.e(TAG, "Exception issuing GM_xmlhttpRequest for: " + url
 					+ ": " + e.getMessage());
 			CMN.debug(e);
 			if (duringUpload) {

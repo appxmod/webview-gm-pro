@@ -196,6 +196,10 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=41, shift=1) public boolean needReplaceWindowGM_(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=42) public void hasRightTurnOnScreen(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=42) public boolean hasRightTurnOnScreen(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=43) public void hasRightConfig(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=43) public boolean hasRightConfig(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=44) public void hasRightKnock(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=44) public boolean hasRightKnock(){ rights|=Z; throw new RuntimeException(); }
 	
 	
 	public void release() {

@@ -103,22 +103,33 @@ public class WebViewClientGm extends WebViewClient {
 	function GM_getResourceText(resourceName) {
 		return GM_wv.bg.getResourceText(GM_wv.id, GM_wv.sec, resourceName);
 	}
+	var realXMLHttpRequest;
 	function GM_xmlhttpRequest(details) {
 		//console.log('GM_xmlhttpRequest, details=', details, details.url.startsWith(location.origin));
 		if(details.url.startsWith(location.origin)) try{
-			var xhr = new XMLHttpRequest();
-			xhr.open(details.method||'GET', details.url);
-			xhr.onload = function(res){
-				//console.log('onload, res=', res, xhr);
-				if(details.onload) details.onload(res.target);
-			};
-			xhr.onerror = details.onerror;
-			xhr.responseType = details.responseType||'';
-			xhr.ontimeout = details.ontimeout;
-			xhr.onprogress = details.onprogress;
-			xhr.onreadystatechange = details.onreadystatechange;
-			xhr.onabort = details.onabort;
-			return xhr.send();
+			if(!realXMLHttpRequest) {
+				realXMLHttpRequest = XMLHttpRequest;
+				if((XMLHttpRequest.prototype.send+'').indexOf('[native')<0) {
+					var iframe = document.createElement('iframe');
+					document.body.appendChild(iframe); iframe.style.height='0';
+					realXMLHttpRequest = iframe.contentWindow.XMLHttpRequest;
+				}
+			}
+//			if((XMLHttpRequest.prototype.send+'').indexOf('[native')>0) {
+				var xhr = new realXMLHttpRequest();
+				xhr.open(details.method||'GET', details.url);
+				xhr.onload = function(res){
+					//console.log('onload, res=', res, xhr);
+					if(details.onload) details.onload(res.target);
+				};
+				xhr.onerror = details.onerror;
+				xhr.responseType = details.responseType||'';
+				xhr.ontimeout = details.ontimeout;
+				xhr.onprogress = details.onprogress;
+				xhr.onreadystatechange = details.onreadystatechange;
+				xhr.onabort = details.onabort;
+				return xhr.send();
+//			}
 		} catch(e){console.log(e)}
 	
 		var sig = Math.ceil(Math.random() * 10000) + ('' + Date.now()).slice(7);
@@ -165,7 +176,10 @@ public class WebViewClientGm extends WebViewClient {
 			hook('onload', 1);
 			hook('onprogress');
 		}
-		return JSON.parse(GM_wv.bg.xmlHttpRequest(GM_wv.id, GM_wv.sec, JSON.stringify(details)));
+		var ret = GM_wv.bg.xmlHttpRequest(GM_wv.id, GM_wv.sec, JSON.stringify(details));
+//		console.log('ret=', ret );
+//		console.log('ret::', JSON.parse(ret));
+		return ret?JSON.parse(ret):null;
 	}
 	function nonimpl(n) {
 		GM_log(n+" is not yet implemented");
@@ -210,6 +224,12 @@ public class WebViewClientGm extends WebViewClient {
 	}
 	function GM_turnOnScreen(activate) {
 		return GM_wv.bg.turnOnScreen(GM_wv.id, GM_wv.sec, activate);
+	}
+	function GM_config(key,bool,dat) {
+		return GM_wv.bg.config(GM_wv.id, GM_wv.sec, key,bool,dat);
+	}
+	function GM_knock(x, y) {
+		return GM_wv.bg.knock(GM_wv.id, GM_wv.sec, x, y);
 	}
 	function GM_windowHeight() {
 		return GM_wv.bg.windowHeight(GM_wv.id, GM_wv.sec);
@@ -381,7 +401,7 @@ public class WebViewClientGm extends WebViewClient {
 						}
 					}
 					if (key.needReplaceWindowGM_() && content.indexOf(".GM_")>0) {
-						content = content.replaceAll("[^\\s:;,.!?|{}()\\[\\] + -]+?\\.GM_", "GM_window.GM_");
+						content = content.replaceAll("[^\\s:;,.!?|{}()\\[\\] + -*/]+?\\.GM_", "GM_window.GM_");
 					}
 					buffer.append(jsBeforeScript)
 							.append(content)

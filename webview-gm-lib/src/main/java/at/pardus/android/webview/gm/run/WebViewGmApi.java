@@ -279,11 +279,7 @@ public class WebViewGmApi {
 						for (String conn : script.connect) {
 							if (domain.endsWith(conn)) {
 								int num = domainSegNum(conn);
-								if (num == 1) {
-									doit = true;
-									break;
-								}
-								if (num > 1 && conn.length() == domain.length()) {
+								if (num >= 1) {
 									doit = true;
 									break;
 								}
@@ -295,7 +291,7 @@ public class WebViewGmApi {
 					if (doit) {
 						WebViewXmlHttpResponse response = request.execute();
 						if (response != null) {
-							//CMN.debug("response::", response);
+							CMN.debug("response::", response);
 							return response.toJSONString();
 						}
 					}
@@ -304,7 +300,7 @@ public class WebViewGmApi {
 		} catch (Exception e) {
 			CMN.debug(e);
 		}
-		return "";
+		return null;
 	}
 	
 	private String getDomain(String url) {
@@ -399,6 +395,23 @@ public class WebViewGmApi {
 		if(script!=null && script.hasRightTurnOnScreen()) {
 		
 		}
+	}
+	
+	@JavascriptInterface
+	public void config(String runtimeId, String secret, int key, boolean bool, String dat) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightConfig()) {
+		
+		}
+	}
+	
+	@JavascriptInterface
+	public int knock(String runtimeId, String secret, int x, int y) {
+		ScriptCriteria script = scriptStore.getRunningScript(runtimeId, secret);
+		if(script!=null && script.hasRightKnock()) {
+		
+		}
+		return 0;
 	}
 	
 	@JavascriptInterface
