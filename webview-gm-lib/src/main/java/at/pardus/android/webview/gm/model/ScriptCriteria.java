@@ -200,8 +200,12 @@ public class ScriptCriteria extends ScriptId {
 	@Metaline(flagPos=43) public boolean hasRightConfig(){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=44) public void hasRightKnock(boolean val){ rights|=Z; throw new RuntimeException(); }
 	@Metaline(flagPos=44) public boolean hasRightKnock(){ rights|=Z; throw new RuntimeException(); }
-	
-	
+	@Metaline(flagPos=45) public void hasRightSetTmp(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=45) public boolean hasRightSetTmp(){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=46) public void hasRightGetTmp(boolean val){ rights|=Z; throw new RuntimeException(); }
+	@Metaline(flagPos=46) public boolean hasRightGetTmp(){ rights|=Z; throw new RuntimeException(); }
+
+
 	public void release() {
 		this.name = null;
 		this.namespace = null;

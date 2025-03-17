@@ -368,6 +368,18 @@ public class WebViewGmApi {
 	}
 	
 	@JavascriptInterface
+	public boolean setClipboard(String runtimeId, String secret, String text) {
+		CMN.debug("default");
+		return false;
+	}
+	
+	@JavascriptInterface
+	public String getClipboard(String runtimeId, String secret) {
+		CMN.debug("default");
+		return "";
+	}
+	
+	@JavascriptInterface
 	public boolean configDomain(String runtimeId, String secret, boolean setIfNonSet, String options) {
 		return false;
 	}

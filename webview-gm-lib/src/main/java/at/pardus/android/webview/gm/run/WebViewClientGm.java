@@ -204,8 +204,11 @@ public class WebViewClientGm extends WebViewClient {
 			GM_wv.bg.unregisterMenuCommand(GM_wv.id, GM_wv.sec, id);
 		}
 	}
-	function GM_setClipboard() {
-		nonimpl('GM_setClipboard');
+	function GM_setClipboard(e) {
+		return GM_wv.bg.setClipboard(GM_wv.id, GM_wv.sec, e);
+	}
+	function GM_getClipboard() {
+		return GM_wv.bg.getClipboard(GM_wv.id, GM_wv.sec);
 	}
 	function GM_configDomain(setIfNonSet, options) {
 		return GM_wv.bg.configDomain(GM_wv.id, GM_wv.sec, setIfNonSet, options);
